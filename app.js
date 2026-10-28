@@ -1,340 +1,355 @@
 "use strict";
 
 const app = document.getElementById("app");
+const KEY = "eea-practice-v2";
 
 let category = "";
-let currentLessonId = null;
+let activeLevel = 0;
+let activeTopic = 0;
+let currentQuestions = [];
+let saved = {};
+let storageOK = true;
 
-/*
-  Para agregar otra lección, añade un objeto a este arreglo
-  siguiendo la misma estructura.
-*/
-const lessons = [
-  {
-    id: 1,
-    level: 1,
-    title: "Saludos y presentaciones",
-    goal:
-      "Puedo saludar, decir mi nombre y preguntar el nombre de otra persona.",
+/* Recuperar avance local sin impedir el uso si el navegador lo bloquea. */
+try {
+  saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+} catch {
+  storageOK = false;
+}
 
-    explanation: [
-      {
-        title: "1. Saluda",
-        text:
-          "Hello y Hi significan hola. Good morning se usa por la mañana " +
-          "y Good afternoon por la tarde. Para despedirte puedes usar Goodbye o Bye."
-      },
-      {
-        title: "2. Preséntate con I am",
-        text:
-          "I am significa yo soy o yo estoy, según el contexto. " +
-          "Para decir tu nombre puedes usar I am Ana o su forma corta: I’m Ana."
-      },
-      {
-        title: "3. Pregunta el nombre",
-        text:
-          "What’s your name? significa ¿Cómo te llamas? " +
-          "Puedes responder My name is Carlos o I’m Carlos."
-      },
-      {
-        title: "4. Usa you are",
-        text:
-          "You are significa tú eres o tú estás. Su forma corta es you’re. " +
-          "Ejemplo: You’re Carlos. No confundas you’re con your: " +
-          "en What’s your name?, your significa tu."
-      }
-    ],
+if (!saved || typeof saved !== "object" || Array.isArray(saved)) {
+  saved = {};
+}
 
-    examples: [
-      ["Hello! I’m Ana.", "¡Hola! Soy Ana."],
-      ["What’s your name?", "¿Cómo te llamas?"],
-      ["My name is Carlos.", "Me llamo Carlos."],
-      ["Nice to meet you.", "Mucho gusto."],
-      ["Nice to meet you, too.", "Mucho gusto también."]
-    ],
-
-    pronunciation: [
-      {
-        word: "Hello",
-        ipa: "/həˈloʊ/",
-        guide: "je-LÓU",
-        tip:
-          "La segunda sílaba lleva la fuerza. La h es aire suave, " +
-          "no una jota fuerte."
-      },
-      {
-        word: "Hi",
-        ipa: "/haɪ/",
-        guide: "JÁI",
-        tip:
-          "Una sola sílaba. Empieza dejando salir aire suave; " +
-          "la j escrita es solo una aproximación."
-      },
-      {
-        word: "Name",
-        ipa: "/neɪm/",
-        guide: "NÉIM",
-        tip:
-          "Una sola sílaba. Desliza la vocal de e hacia i. " +
-          "No agregues una vocal después de la m."
-      },
-      {
-        word: "Meet",
-        ipa: "/miːt/",
-        guide: "MÍIT",
-        tip:
-          "Una sola sílaba, con una i sostenida. " +
-          "Termina en t sin añadir una e."
-      }
-    ],
-
-    questions: [
-      {
-        text: "Completa: I ___ Ana.",
-        options: ["are", "am", "is"],
-        answer: 1,
-        explanation: "Con I usamos am: I am Ana."
-      },
-      {
-        text: "¿Qué pregunta sirve para conocer el nombre?",
-        options: [
-          "What’s your name?",
-          "Good afternoon.",
-          "Nice to meet you."
-        ],
-        answer: 0,
-        explanation:
-          "What’s your name? significa ¿Cómo te llamas?"
-      },
-      {
-        text: "Elige la forma corta de I am.",
-        options: ["I’s", "I’re", "I’m"],
-        answer: 2,
-        explanation: "I am se contrae como I’m."
-      },
-      {
-        text: "Responde: Nice to meet you.",
-        options: [
-          "My name.",
-          "Nice to meet you, too.",
-          "You am Carlos."
-        ],
-        answer: 1,
-        explanation:
-          "Nice to meet you, too expresa que también te da gusto conocer a la persona."
-      },
-      {
-        text: "Completa: You ___ Carlos.",
-        options: ["am", "is", "are"],
-        answer: 2,
-        explanation: "Con you usamos are: You are Carlos."
-      }
-    ],
-
-    speakingTask:
-      "Sin leer los ejemplos: saluda, di tu nombre y pregunta el nombre " +
-      "de otra persona. Termina con Nice to meet you. " +
-      "Puedes practicar ambas partes del diálogo si estás solo."
-  }
-];
-
-/* Convierte texto en contenido seguro para las plantillas HTML. */
-function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, character => ({
+/* Evitar que el contenido se interprete como código HTML. */
+const esc = value =>
+  String(value).replace(/[&<>"']/g, character => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
     "'": "&#39;"
   }[character]));
-}
 
-function focusContent() {
+const statusKey = (level, topic) =>
+  `${category}-${level}-${topic}`;
+
+function go(html) {
+  app.innerHTML = html;
   app.focus();
   window.scrollTo(0, 0);
 }
 
-function showHome() {
-  currentLessonId = null;
+function shuffle(items) {
+  const output = [...items];
 
-  app.innerHTML = `
-    <p class="tag">Tu espacio de apoyo</p>
-    <h1>Practica a tu ritmo.</h1>
+  for (let i = output.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [output[i], output[j]] = [output[j], output[i]];
+  }
+
+  return output;
+}
+
+/* PANTALLA DE ENTRADA */
+function home() {
+  go(`
+    <p class="tag">EEA · Apoyo para tus clases</p>
+
+    <h1>Aprende. Practica.<br>Vuelve a intentarlo.</h1>
+
     <p>
-      Repasa lo que viste en clase y prepárate para participar
-      con más confianza.
+      Explora los 12 niveles y elige qué necesitas reforzar.
+      No hay temas bloqueados.
     </p>
 
     <div class="notice">
-      <strong>Primera versión de prueba.</strong>
-      La categoría organiza el contenido; no funciona como
-      contraseña ni restringe el acceso.
+      Beta abierta: la categoría organiza el contenido,
+      pero no es un acceso privado.
+      El avance se guarda en este navegador,
+      sin identificar estudiantes.
     </div>
 
     <div class="grid">
-      <section class="card">
-        <h2>Adolescentes</h2>
-        <p>Explicaciones, ejemplos y práctica del programa EEA.</p>
-        <button data-category="Adolescentes">Entrar</button>
-      </section>
-
-      <section class="card">
-        <h2>Adultos</h2>
-        <p>Refuerza tus bases y practica para tus clases.</p>
-        <button data-category="Adultos">Entrar</button>
-      </section>
+      ${["Adolescentes", "Adultos"].map(item => `
+        <section class="card">
+          <h2>${item}</h2>
+          <p>
+            Programa de 12 niveles, con explicaciones,
+            pronunciación escrita, lecturas y ejercicios.
+          </p>
+          <button data-category="${item}">Explorar</button>
+        </section>
+      `).join("")}
     </div>
-  `;
-
-  focusContent();
+  `);
 }
 
-function showLevels() {
-  currentLessonId = null;
+/* SELECTOR DE NIVELES */
+function levels() {
+  const cards = EEA.map((level, index) => {
+    let count = 0;
 
-  app.innerHTML = `
+    for (let topic = 0; topic < 8; topic++) {
+      if (saved[statusKey(index, topic)]) count++;
+    }
+
+    return `
+      <section class="card">
+        <p class="tag">Nivel ${index + 1}</p>
+        <h2>${esc(level.title)}</h2>
+        <p>${count} de 8 secciones practicadas</p>
+        <button data-level="${index}">Ver temas</button>
+      </section>
+    `;
+  }).join("");
+
+  go(`
     <button class="secondary" data-action="home">
-      ← Cambiar categoría
+      ← Categorías
     </button>
 
-    <p class="tag">${escapeHTML(category)}</p>
-    <h1>Elige un nivel</h1>
-    <p>
-      No necesitas aprobar una práctica para abrir otra.
-      Esta primera entrega incluye una lección del nivel 1.
-    </p>
-
-    <section class="card">
-      <p class="tag">Nivel 1</p>
-      <h2>Me and My Identity</h2>
-      <p>
-        Aprende a presentarte e intercambiar información personal.
-      </p>
-      <button data-action="topics">Ver temas</button>
-    </section>
+    <p class="tag">${esc(category)}</p>
+    <h1>Elige tu nivel</h1>
 
     <p>
-      Los niveles 2–12 se incorporarán conforme preparemos
-      sus contenidos.
+      Los resultados son de práctica;
+      no cambian tu nivel académico
+      ni certifican un nivel CEFR.
     </p>
-  `;
 
-  focusContent();
+    <div class="grid">${cards}</div>
+  `);
 }
 
-function showTopics() {
-  currentLessonId = null;
+function topicTitle(index) {
+  if (index < 6) {
+    return EEA[activeLevel].topics[index][0];
+  }
 
-  const cards = lessons.map(lesson => `
-    <section class="card">
-      <p class="tag">Tema ${lesson.id}</p>
-      <h2>${escapeHTML(lesson.title)}</h2>
-      <p>${escapeHTML(lesson.goal)}</p>
-      <button data-lesson="${lesson.id}">Practicar</button>
-    </section>
-  `).join("");
+  return index === 6
+    ? "Repaso integrado"
+    : "Preparación para la evaluación";
+}
 
-  app.innerHTML = `
+/* SELECTOR DE LOS OCHO SÁBADOS */
+function topics() {
+  const cards = Array.from({ length: 8 }, (_, index) => {
+    const record = saved[statusKey(activeLevel, index)];
+
+    const description = index < 6
+      ? "Comprende · Ejemplos · Pronunciación · Lectura · Práctica"
+      : index === 6
+        ? "Integra los seis temas y detecta qué necesitas reforzar."
+        : "Ensaya las habilidades del nivel. No contiene el examen oficial.";
+
+    return `
+      <section class="card">
+        <p class="tag">Sábado ${index + 1}</p>
+        <h2>${esc(topicTitle(index))}</h2>
+        <p>${description}</p>
+
+        ${record ? `
+          <p class="done">
+            Practicado · Mejor resultado:
+            ${Number(record.best) || 0}%
+          </p>
+        ` : ""}
+
+        <button data-topic="${index}">
+          ${record ? "Practicar otra vez" : "Abrir"}
+        </button>
+      </section>
+    `;
+  }).join("");
+
+  go(`
     <button class="secondary" data-action="levels">
       ← Niveles
     </button>
 
-    <p class="tag">${escapeHTML(category)} · Nivel 1</p>
-    <h1>Me and My Identity</h1>
+    <p class="tag">
+      ${esc(category)} · Nivel ${activeLevel + 1}
+    </p>
+
+    <h1>${esc(EEA[activeLevel].title)}</h1>
 
     <div class="grid">${cards}</div>
-
-    <div class="notice">
-      Próximos temas: alfabeto e información personal,
-      países y nacionalidades, personas y ocupaciones,
-      descripción personal, presentación completa,
-      repaso y preparación para la evaluación.
-    </div>
-  `;
-
-  focusContent();
+  `);
 }
 
-function showLesson(id) {
-  const lesson = lessons.find(item => item.id === id);
-  if (!lesson) return;
+/* DOS PREGUNTAS POR TEMA: USO + COMPRENSIÓN */
+function makeQuestions(rows) {
+  return rows.flatMap(row => [
+    {
+      kind: "Gramática y uso",
+      text: row[7],
+      correct: row[8],
+      wrong: row[9],
+      why: `${row[1]} Ejemplo: ${row[2]}`
+    },
+    {
+      kind: "Comprensión lectora",
+      text: row[4],
+      correct: row[5],
+      wrong: row[6],
+      why: `La respuesta se encuentra en esta lectura: ${row[3]}`
+    }
+  ]);
+}
 
-  currentLessonId = id;
+/* MOSTRAR UNA LECCIÓN, REPASO O PREPARACIÓN */
+function lesson() {
+  const level = EEA[activeLevel];
+  const integrated = activeTopic >= 6;
 
-  const explanations = lesson.explanation.map(item => `
-    <h3>${escapeHTML(item.title)}</h3>
-    <p>${escapeHTML(item.text)}</p>
-  `).join("");
+  const rows = integrated
+    ? level.topics
+    : [level.topics[activeTopic]];
 
-  const examples = lesson.examples.map(([english, spanish]) => `
+  currentQuestions = makeQuestions(rows);
+
+  /*
+    El repaso reutiliza las preguntas de los seis temas.
+    La preparación mezcla su orden.
+    Ninguna sección contiene el examen oficial.
+  */
+  if (activeTopic === 7) {
+    currentQuestions = shuffle(currentQuestions);
+  }
+
+  const understands = rows.map(row => {
+    const points = row[1]
+      .split(/\.\s+/)
+      .filter(Boolean)
+      .map(point => `<li>${esc(point)}</li>`)
+      .join("");
+
+    return `
+      <div class="rule">
+        <h3>
+          ${integrated ? esc(row[0]) : "La idea principal"}
+        </h3>
+        <ul>${points}</ul>
+      </div>
+    `;
+  }).join("");
+
+  const examples = rows.map(row => `
     <div class="example">
-      <strong lang="en">${escapeHTML(english)}</strong><br>
-      ${escapeHTML(spanish)}
+      <strong>${esc(row[0])}</strong>
+      <p lang="en">${esc(row[2])}</p>
     </div>
   `).join("");
 
-  const pronunciation = lesson.pronunciation.map(item => `
+  const readings = rows.map((row, index) => `
+    <article class="reading">
+      <h3>Lectura ${index + 1} · ${esc(row[0])}</h3>
+
+      <p lang="en">${esc(row[3])}</p>
+
+      <p class="muted">
+        Al leer, identifica personas, acciones,
+        momentos y razones.
+        Busca evidencia para responder;
+        no necesitas traducir cada palabra.
+      </p>
+    </article>
+  `).join("");
+
+  const pronunciation = level.sounds.map(word => `
     <tr>
-      <td lang="en"><strong>${escapeHTML(item.word)}</strong></td>
-      <td>${escapeHTML(item.ipa)}</td>
-      <td><strong>${escapeHTML(item.guide)}</strong></td>
-      <td>${escapeHTML(item.tip)}</td>
+      ${word.map((part, index) => `
+        <td${index === 0 ? ' lang="en"' : ""}>
+          ${esc(part)}
+        </td>
+      `).join("")}
     </tr>
   `).join("");
 
-  const questions = lesson.questions.map((question, index) => `
-    <fieldset>
-      <legend>${index + 1}. ${escapeHTML(question.text)}</legend>
+  const questions = currentQuestions.map((question, index) => {
+    const options = shuffle([
+      question.correct,
+      question.wrong
+    ]);
 
-      ${question.options.map((option, optionIndex) => `
-        <label>
-          <input
-            type="radio"
-            name="q${index}"
-            value="${optionIndex}"
-            required
-          >
-          <span lang="en">${escapeHTML(option)}</span>
-        </label>
-      `).join("")}
+    return `
+      <fieldset>
+        <legend>
+          ${index + 1}.
+          ${esc(question.kind)} · ${esc(question.text)}
+        </legend>
 
-      <div id="feedback-${index}"></div>
-    </fieldset>
-  `).join("");
+        ${options.map(option => `
+          <label class="option">
+            <input
+              type="radio"
+              name="q${index}"
+              value="${esc(option)}"
+              required
+            >
+            <span>${esc(option)}</span>
+          </label>
+        `).join("")}
 
-  app.innerHTML = `
+        <div id="feedback-${index}"></div>
+      </fieldset>
+    `;
+  }).join("");
+
+  const mission = integrated
+    ? "Integra lo aprendido. Puedes consultar cualquier tema y volver a intentarlo."
+    : rows[0][10];
+
+  go(`
     <button class="secondary" data-action="topics">
-      ← Temas del nivel
+      ← Temas
     </button>
 
     <p class="tag">
-      ${escapeHTML(category)} · Nivel ${lesson.level}
+      ${esc(category)} · Nivel ${activeLevel + 1}
+      · Sábado ${activeTopic + 1}
     </p>
 
-    <h1>${escapeHTML(lesson.title)}</h1>
+    <h1>${esc(topicTitle(activeTopic))}</h1>
 
     <div class="notice">
-      <strong>Al terminar:</strong>
-      ${escapeHTML(lesson.goal)}
+      ${esc(mission)}
+
+      ${activeTopic === 3 ? `
+        <br>
+        Este sábado incluye el control escrito y oral en clase;
+        esta práctica no lo sustituye.
+      ` : ""}
+
+      ${activeTopic === 7 ? `
+        <br>
+        Preparación únicamente:
+        la evaluación oficial escrita y oral
+        corresponde al docente.
+      ` : ""}
     </div>
 
     <section class="card">
-      <h2>Comprende</h2>
-      ${explanations}
+      <h2>1. Comprende</h2>
+      <div class="rules">${understands}</div>
     </section>
 
     <section class="card">
-      <h2>Observa los ejemplos</h2>
+      <h2>2. Observa los ejemplos</h2>
       ${examples}
     </section>
 
     <section class="card">
-      <h2>Guía de pronunciación</h2>
+      <h2>3. Pronunciación del nivel</h2>
+
       <p>
-        Referencia: inglés estadounidense.
-        Las mayúsculas marcan la parte fuerte de la aproximación.
-        Las letras españolas son una ayuda inicial y no representan
-        todos los sonidos con exactitud.
+        Referencia estadounidense.
+        Las MAYÚSCULAS indican la parte fuerte
+        de la aproximación.
+        La escritura española es una ayuda limitada;
+        no reemplaza escuchar
+        ni permite evaluar pronunciación.
       </p>
 
       <div class="table-scroll">
@@ -353,107 +368,172 @@ function showLesson(id) {
     </section>
 
     <section class="card">
-      <h2>Practica</h2>
-      <p>Selecciona una respuesta en cada pregunta.</p>
+      <h2>4. Comprensión lectora</h2>
 
-      <form id="practice-form">
+      ${readings}
+
+      <label for="reflection">
+        Escribe la idea principal y dos detalles de
+        ${integrated ? "una de las lecturas" : "la lectura"}:
+      </label>
+
+      <textarea
+        id="reflection"
+        rows="4"
+        placeholder="Esta respuesta es para tu práctica personal; no se califica ni se guarda."
+      ></textarea>
+    </section>
+
+    <section class="card">
+      <h2>5. Practica y comprueba</h2>
+
+      <p>
+        Contesta todas las preguntas.
+        Puedes volver a consultar las lecturas.
+      </p>
+
+      <form id="quiz">
         ${questions}
         <button type="submit">Revisar respuestas</button>
       </form>
 
-      <div id="result" role="status" aria-live="polite"></div>
+      <p
+        id="result"
+        role="status"
+        aria-live="polite"
+      ></p>
     </section>
 
     <section class="card">
-      <h2>Ahora úsalo</h2>
-      <p>${escapeHTML(lesson.speakingTask)}</p>
+      <h2>6. Ahora úsalo</h2>
 
-      <div class="notice">
-        Esta actividad se practica en voz alta.
-        La beta no graba ni evalúa tu pronunciación.
-      </div>
+      <ul>
+        ${rows.map(row => `<li>${esc(row[10])}</li>`).join("")}
+      </ul>
+
+      <p>
+        Practica en voz alta o con un compañero.
+        Esta beta no graba ni califica
+        el desempeño oral.
+      </p>
     </section>
 
     <div class="actions">
       <button class="secondary" data-action="retry">
-        Reiniciar práctica
+        Reiniciar intento
       </button>
-      <button data-action="topics">Volver a los temas</button>
-    </div>
-  `;
 
-  focusContent();
+      <button data-action="topics">
+        Volver a los temas
+      </button>
+    </div>
+  `);
 }
 
+/* NAVEGACIÓN */
 app.addEventListener("click", event => {
   const button = event.target.closest("button");
   if (!button) return;
 
   if (button.dataset.category) {
     category = button.dataset.category;
-    showLevels();
+    levels();
     return;
   }
 
-  if (button.dataset.lesson) {
-    showLesson(Number(button.dataset.lesson));
+  if (button.dataset.level !== undefined) {
+    activeLevel = Number(button.dataset.level);
+    topics();
+    return;
+  }
+
+  if (button.dataset.topic !== undefined) {
+    activeTopic = Number(button.dataset.topic);
+    lesson();
     return;
   }
 
   switch (button.dataset.action) {
     case "home":
-      showHome();
+      home();
       break;
+
     case "levels":
-      showLevels();
+      levels();
       break;
+
     case "topics":
-      showTopics();
+      topics();
       break;
+
     case "retry":
-      showLesson(currentLessonId);
+      lesson();
       break;
   }
 });
 
+/* CORRECCIÓN Y GUARDADO DEL RESULTADO */
 app.addEventListener("submit", event => {
-  if (event.target.id !== "practice-form") return;
+  if (event.target.id !== "quiz") return;
+
   event.preventDefault();
 
-  const lesson = lessons.find(item => item.id === currentLessonId);
-  if (!lesson) return;
-
   const answers = new FormData(event.target);
-  let correct = 0;
+  let score = 0;
 
-  lesson.questions.forEach((question, index) => {
-    const selected = answers.get(`q${index}`);
-    const isCorrect =
-      selected !== null && Number(selected) === question.answer;
+  currentQuestions.forEach((question, index) => {
+    const correct =
+      answers.get(`q${index}`) === question.correct;
 
-    if (isCorrect) correct++;
+    if (correct) score++;
 
-    const feedback = document.getElementById(`feedback-${index}`);
+    const box = document.getElementById(`feedback-${index}`);
 
-    feedback.className =
-      `feedback${isCorrect ? "" : " incorrect"}`;
+    box.className =
+      `feedback ${correct ? "" : "incorrect"}`;
 
-    feedback.textContent =
-      `${isCorrect ? "Correcto." : "Revisa esta respuesta."} ` +
-      `Respuesta: ${question.options[question.answer]}. ` +
-      question.explanation;
+    box.textContent =
+      `${correct ? "Correcto." : "Revisa esta respuesta."} ` +
+      `Respuesta: ${question.correct}. ${question.why}`;
   });
+
+  const percent = Math.round(
+    score / currentQuestions.length * 100
+  );
+
+  const key = statusKey(activeLevel, activeTopic);
+
+  const previous =
+    saved[key] && typeof saved[key] === "object"
+      ? saved[key]
+      : {};
+
+  saved[key] = {
+    best: Math.max(Number(previous.best) || 0, percent),
+    last: percent,
+    attempts: (Number(previous.attempts) || 0) + 1
+  };
+
+  try {
+    localStorage.setItem(KEY, JSON.stringify(saved));
+    storageOK = true;
+  } catch {
+    storageOK = false;
+  }
 
   const result = document.getElementById("result");
 
   result.textContent =
-    `Resultado: ${correct} de ${lesson.questions.length}. ` +
-    (correct === lesson.questions.length
-      ? "¡Bien! Ahora practica el diálogo sin leer."
-      : "Lee las explicaciones y vuelve a intentarlo.") +
-    " Este resultado es de práctica y no es una nota oficial.";
+    `Resultado: ${score}/${currentQuestions.length} (${percent}%). ` +
+    "No es una nota oficial ni una evaluación oral. " +
+    (storageOK
+      ? "Avance guardado en este navegador."
+      : "No se pudo guardar de forma persistente; el avance solo durará esta sesión.");
 
-  result.scrollIntoView({ behavior: "smooth", block: "center" });
+  result.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
 });
 
-showHome();
+home();
