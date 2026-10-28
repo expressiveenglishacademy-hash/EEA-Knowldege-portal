@@ -1,21 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#143c45">
-  <title>EEA | Student Practice Hub</title>
+  <title>EEA · Practice Hub</title>
 
   <style>
-    :root {
-      font-family: system-ui, sans-serif;
-      color: #20363c;
-      background: #f5f6f2;
-      line-height: 1.6;
-    }
-
     * { box-sizing: border-box; }
-    body { margin: 0; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f5f6f2;
+      color: #20363c;
+      line-height: 1.65;
+    }
 
     header {
       background: #143c45;
@@ -23,26 +23,29 @@
       padding: 22px;
     }
 
-    .header-inner, main, footer {
-      max-width: 980px;
+    .wrap, main, footer {
+      max-width: 1080px;
       margin: auto;
     }
 
-    .brand {
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: 1px;
-    }
-
-    .subtitle { margin: 4px 0 0; }
-
     main {
       padding: 30px 20px;
-      min-height: 70vh;
+      min-height: 75vh;
     }
 
-    h1, h2, h3 { line-height: 1.25; }
-    h1 { font-size: clamp(28px, 5vw, 42px); }
+    h1 {
+      font-size: clamp(30px, 5vw, 46px);
+      line-height: 1.2;
+    }
+
+    h2, h3 { line-height: 1.35; }
+    h2 { font-size: 23px; }
+    h3 { font-size: 18px; }
+
+    .brand {
+      font-size: 25px;
+      font-weight: 800;
+    }
 
     .tag {
       color: #176951;
@@ -52,9 +55,9 @@
       letter-spacing: 1px;
     }
 
-    .grid {
+    .grid, .rules {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 18px;
     }
 
@@ -63,21 +66,32 @@
       border: 1px solid #dce5df;
       border-radius: 16px;
       padding: 24px;
-      margin-bottom: 20px;
+      margin: 20px 0;
     }
+
+    .grid .card { margin: 0; }
+
+    .rule {
+      background: #f5f7f3;
+      padding: 18px;
+      border-radius: 10px;
+    }
+
+    .rule ul { padding-left: 20px; }
+    .rule li { margin: 12px 0; }
 
     .notice {
       background: #e9f1e9;
       border-left: 4px solid #26725c;
-      border-radius: 8px;
       padding: 16px;
       margin: 20px 0;
+      border-radius: 8px;
     }
 
     button {
       background: #176951;
       color: white;
-      border: none;
+      border: 0;
       border-radius: 9px;
       padding: 12px 18px;
       font: inherit;
@@ -94,17 +108,30 @@
 
     .secondary:hover { background: #d3e2d9; }
 
-    button:focus-visible,
-    input:focus-visible {
-      outline: 3px solid #b88022;
-      outline-offset: 4px;
+    .example {
+      background: #f7f6ef;
+      border-left: 3px solid #bb944c;
+      padding: 15px;
+      margin: 14px 0;
     }
 
-    .example {
-      background: #f5f6f2;
-      border-left: 3px solid #bb944c;
-      padding: 14px;
-      margin: 12px 0;
+    .example p { margin: 6px 0; }
+
+    .reading {
+      margin: 20px 0;
+      padding: 18px;
+      background: #f4f7f5;
+      border-radius: 10px;
+    }
+
+    .reading p[lang="en"] {
+      font-size: 18px;
+      line-height: 1.9;
+    }
+
+    .muted, footer {
+      color: #53676c;
+      font-size: 14px;
     }
 
     .table-scroll { overflow-x: auto; }
@@ -114,41 +141,43 @@
       border-collapse: collapse;
     }
 
-    th, td {
-      text-align: left;
-      vertical-align: top;
+    td, th {
       border-bottom: 1px solid #e1e6e2;
       padding: 12px;
+      text-align: left;
+      vertical-align: top;
       min-width: 110px;
     }
 
     fieldset {
       border: 1px solid #dce5df;
       border-radius: 10px;
-      margin: 22px 0;
+      margin: 20px 0;
       padding: 18px;
     }
 
     legend {
       font-weight: 700;
-      padding: 0 5px;
+      padding: 0 6px;
     }
 
-    label {
-      display: block;
-      padding: 10px;
+    .option {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
       cursor: pointer;
     }
 
     input[type="radio"] {
       accent-color: #176951;
-      margin-right: 8px;
+      margin-top: 7px;
+      flex-shrink: 0;
     }
 
     .feedback {
-      padding: 12px;
-      border-radius: 8px;
       background: #eaf3ec;
+      padding: 14px;
+      border-radius: 8px;
     }
 
     .incorrect { background: #fff0df; }
@@ -157,41 +186,76 @@
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
-      margin-top: 20px;
     }
 
-    footer {
-      padding: 24px 20px;
-      color: #53676c;
-      font-size: 13px;
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #a9bcb0;
+      border-radius: 8px;
+      font: inherit;
+      resize: vertical;
     }
 
-    @media (max-width: 500px) {
-      .card { padding: 18px; }
+    .done {
+      color: #176951;
+      font-weight: 700;
+    }
+
+    footer { padding: 25px 20px; }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    a:focus-visible {
+      outline: 3px solid #b88022;
+      outline-offset: 4px;
+    }
+
+    .skip {
+      position: absolute;
+      top: -100px;
+      background: white;
+      padding: 10px;
+      color: #143c45;
+    }
+
+    .skip:focus { top: 0; }
+
+    @media (max-width: 550px) {
       main { padding: 22px 14px; }
+      .card { padding: 18px; }
+      td, th { padding: 8px; }
     }
   </style>
 
+  <script src="./content.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
 
 <body>
+  <a class="skip" href="#app">Ir al contenido</a>
+
   <header>
-    <div class="header-inner">
+    <div class="wrap">
       <div class="brand">EEA · Practice Hub</div>
-      <p class="subtitle">Embrace the Extraordinary.</p>
+      <div>Embrace the Extraordinary.</div>
     </div>
   </header>
 
   <main id="app" tabindex="-1"></main>
 
   <noscript>
-    Necesitas activar JavaScript para utilizar las lecciones.
+    Activa JavaScript para abrir los temas y ejercicios.
   </noscript>
 
   <footer>
-    Expressive English Academy · Beta educativa.<br>
-    Esta versión no tiene cuentas privadas ni envía resultados a EEA.
+    Expressive English Academy · Beta de apoyo educativo.<br>
+    Sin cuentas privadas. El avance se guarda solo en este navegador;
+    no se envía a EEA.
+    En un dispositivo compartido, las personas de la misma categoría
+    comparten el avance.
+    Borrar los datos del sitio elimina ese registro.
   </footer>
 </body>
 </html>
