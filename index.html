@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#143c45">
+  <title>EEA | Student Practice Hub</title>
+
+  <style>
+    :root {
+      font-family: system-ui, sans-serif;
+      color: #20363c;
+      background: #f5f6f2;
+      line-height: 1.6;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+
+    header {
+      background: #143c45;
+      color: white;
+      padding: 22px;
+    }
+
+    .header-inner, main, footer {
+      max-width: 980px;
+      margin: auto;
+    }
+
+    .brand {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .subtitle { margin: 4px 0 0; }
+
+    main {
+      padding: 30px 20px;
+      min-height: 70vh;
+    }
+
+    h1, h2, h3 { line-height: 1.25; }
+    h1 { font-size: clamp(28px, 5vw, 42px); }
+
+    .tag {
+      color: #176951;
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #dce5df;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .notice {
+      background: #e9f1e9;
+      border-left: 4px solid #26725c;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+
+    button {
+      background: #176951;
+      color: white;
+      border: none;
+      border-radius: 9px;
+      padding: 12px 18px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover { background: #104d3c; }
+
+    .secondary {
+      background: #e4ece7;
+      color: #204837;
+    }
+
+    .secondary:hover { background: #d3e2d9; }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #b88022;
+      outline-offset: 4px;
+    }
+
+    .example {
+      background: #f5f6f2;
+      border-left: 3px solid #bb944c;
+      padding: 14px;
+      margin: 12px 0;
+    }
+
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid #e1e6e2;
+      padding: 12px;
+      min-width: 110px;
+    }
+
+    fieldset {
+      border: 1px solid #dce5df;
+      border-radius: 10px;
+      margin: 22px 0;
+      padding: 18px;
+    }
+
+    legend {
+      font-weight: 700;
+      padding: 0 5px;
+    }
+
+    label {
+      display: block;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    input[type="radio"] {
+      accent-color: #176951;
+      margin-right: 8px;
+    }
+
+    .feedback {
+      padding: 12px;
+      border-radius: 8px;
+      background: #eaf3ec;
+    }
+
+    .incorrect { background: #fff0df; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    footer {
+      padding: 24px 20px;
+      color: #53676c;
+      font-size: 13px;
+    }
+
+    @media (max-width: 500px) {
+      .card { padding: 18px; }
+      main { padding: 22px 14px; }
+    }
+  </style>
+
+  <script src="./app.js" defer></script>
+</head>
+
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand">EEA · Practice Hub</div>
+      <p class="subtitle">Embrace the Extraordinary.</p>
+    </div>
+  </header>
+
+  <main id="app" tabindex="-1"></main>
+
+  <noscript>
+    Necesitas activar JavaScript para utilizar las lecciones.
+  </noscript>
+
+  <footer>
+    Expressive English Academy · Beta educativa.<br>
+    Esta versión no tiene cuentas privadas ni envía resultados a EEA.
+  </footer>
+</body>
+</html>
