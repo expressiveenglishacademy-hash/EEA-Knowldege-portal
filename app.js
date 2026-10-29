@@ -1,7 +1,11 @@
 "use strict";
 
 const app = document.getElementById("app");
-const KEY = "eea-practice-v2";
+const access = window.EEA_ACCESS;
+if (!access || !access.userId) throw new Error("Se necesita una sesión verificada.");
+const KEY = `eea-practice-v3:${access.userId}`;
+const PROGRAM_NAMES = Object.freeze({ EFK: "Niños", EFT: "Adolescentes", EFA: "Adultos" });
+const PROGRAM_CODES = Object.freeze({ "Niños": "EFK", "Adolescentes": "EFT", "Adultos": "EFA" });
 
 let category = "";
 let activeLevel = 0;
@@ -51,8 +55,55 @@ function shuffle(items) {
   return output;
 }
 
+/* CONTEXTO ACADÉMICO ASIGNADO DESDE SUPABASE */
+function programCode() {
+  return access.isAdmin ? PROGRAM_CODES[category] : access.student.program;
+}
+
+function programLevels() {
+  const code = programCode();
+  if (code === "EFK") {
+    const material = window.EEA_KIDS || [];
+    return Array.from({ length: 12 }, (_, index) => material[index] || {
+      title: `Nivel ${index + 1}`,
+      topics: null
+    });
+  }
+  if (code === "EFA") return window.EEA_ADULTS || window.EEA || [];
+  if (code === "EFT") return window.EEA_TEENS || window.EEA || [];
+  return [];
+}
+
+function assignedContext() {
+  if (!access.isAdmin) {
+    category = PROGRAM_NAMES[access.student.program];
+  }
+}
+
+function availableLevel() {
+  const level = programLevels()[activeLevel];
+  return level && Array.isArray(level.topics) && level.topics.length === 6;
+}
+
+function pendingMaterial() {
+  currentQuestions = [];
+  go(`
+    <button class="secondary" data-action="levels">← Mis 12 niveles</button>
+    <p class="tag">${esc(category)} · Nivel ${activeLevel + 1}</p>
+    <h1>Tu espacio de aprendizaje</h1>
+    <div class="notice">El material de este nivel todavía no está disponible.
+      Tu profesor te avisará cuando podás comenzar.</div>
+  `);
+}
+
 /* PANTALLA DE ENTRADA */
 function home() {
+  if (!access.isAdmin) {
+    assignedContext();
+    levels();
+    return;
+  }
+  category = "";
   go(`
     <p class="tag">
       Expressive English Academy · Apoyo para tus clases
@@ -61,19 +112,16 @@ function home() {
     <h1>Aprende. Practica.<br>Vuelve a intentarlo.</h1>
 
     <p>
-      Explora los 12 niveles y elige qué necesitas reforzar.
-      No hay temas bloqueados.
+      Vista de administrador: elegí el programa y nivel que querés revisar.
     </p>
 
     <div class="notice">
-      Beta abierta: la categoría organiza el contenido,
-      pero no es un acceso privado.
-      El avance se guarda en este navegador,
-      sin identificar estudiantes.
+      Estás revisando el material como administrador.
+      Cada estudiante tiene acceso a los 12 niveles de su programa desde el primer ingreso.
     </div>
 
     <div class="grid">
-      ${["Adolescentes", "Adultos"].map(item => `
+      ${["Niños", "Adolescentes", "Adultos"].map(item => `
         <section class="card">
           <h2>${item}</h2>
 
@@ -94,7 +142,9 @@ function home() {
 
 /* SELECTOR DE NIVELES */
 function levels() {
-  const cards = EEA.map((level, index) => {
+  assignedContext();
+  if (!programLevels().length) { activeLevel = 0; pendingMaterial(); return; }
+  const cards = programLevels().map((level, index) => {
     let count = 0;
 
     for (let topic = 0; topic < 8; topic++) {
@@ -107,7 +157,9 @@ function levels() {
 
         <h2>${esc(level.title)}</h2>
 
-        <p>${count} de 8 secciones practicadas</p>
+        <p>${Array.isArray(level.topics)
+          ? `${count} de 8 secciones practicadas`
+          : "Material en preparación"}</p>
 
         <button data-level="${index}">
           Ver temas
@@ -117,9 +169,7 @@ function levels() {
   }).join("");
 
   go(`
-    <button class="secondary" data-action="home">
-      ← Categorías
-    </button>
+    ${access.isAdmin ? '<button class="secondary" data-action="home">← Programas</button>' : ""}
 
     <p class="tag">${esc(category)}</p>
 
@@ -137,7 +187,7 @@ function levels() {
 
 function topicTitle(index) {
   if (index < 6) {
-    return EEA[activeLevel].topics[index][0];
+    return programLevels()[activeLevel].topics[index][0];
   }
 
   return index === 6
@@ -147,6 +197,8 @@ function topicTitle(index) {
 
 /* SELECTOR DE LOS OCHO SÁBADOS */
 function topics() {
+  assignedContext();
+  if (!availableLevel()) { pendingMaterial(); return; }
   const cards = Array.from({ length: 8 }, (_, index) => {
     const record = saved[statusKey(activeLevel, index)];
 
@@ -179,15 +231,13 @@ function topics() {
   }).join("");
 
   go(`
-    <button class="secondary" data-action="levels">
-      ← Niveles
-    </button>
+    <button class="secondary" data-action="levels">← Mis 12 niveles</button>
 
     <p class="tag">
       ${esc(category)} · Nivel ${activeLevel + 1}
     </p>
 
-    <h1>${esc(EEA[activeLevel].title)}</h1>
+    <h1>${esc(programLevels()[activeLevel].title)}</h1>
 
     <div class="grid">${cards}</div>
   `);
@@ -865,7 +915,10 @@ function pronunciationTip(ipa) {
 
 /* SELECCIONAR VOCABULARIO DE LA LECCIÓN */
 function lessonVocabulary(levelIndex, topicIndex) {
-  const topics = EEA_LESSON_VOCAB[levelIndex];
+  const source = programCode() === "EFK"
+    ? (window.EEA_KIDS_VOCAB || [])
+    : EEA_LESSON_VOCAB;
+  const topics = source[levelIndex];
 
   if (!topics) return [];
 
@@ -907,7 +960,10 @@ function lessonVocabulary(levelIndex, topicIndex) {
 
 /* MOSTRAR LECCIÓN, REPASO O PREPARACIÓN */
 function lesson() {
-  const level = EEA[activeLevel];
+  assignedContext();
+  if (!availableLevel()) { pendingMaterial(); return; }
+  if (!Number.isInteger(activeTopic) || activeTopic < 0 || activeTopic > 7) { topics(); return; }
+  const level = programLevels()[activeLevel];
   const integrated = activeTopic >= 6;
 
   const rows = integrated
@@ -1193,12 +1249,15 @@ app.addEventListener("click", event => {
   if (!button) return;
 
   if (button.dataset.category) {
+    if (!access.isAdmin || !PROGRAM_CODES[button.dataset.category]) return;
     category = button.dataset.category;
     levels();
     return;
   }
 
   if (button.dataset.level !== undefined) {
+    const requested = Number(button.dataset.level);
+    if (!Number.isInteger(requested) || !programLevels()[requested]) return;
     activeLevel = Number(button.dataset.level);
     topics();
     return;
@@ -1234,6 +1293,8 @@ app.addEventListener("submit", event => {
   if (event.target.id !== "quiz") return;
 
   event.preventDefault();
+  assignedContext();
+  if (!availableLevel() || !currentQuestions.length) return;
 
   const answers = new FormData(event.target);
   let score = 0;
