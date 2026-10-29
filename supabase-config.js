@@ -1,21 +1,33 @@
+"use strict";
+
+/* CONFIGURACIÓN DE LA PLATAFORMA */
 window.EEA_CONFIG = Object.freeze({
-  supabaseUrl: "https://wunevzubuhjkkcqslwzu.supabase.co/rest/v1/",
-  supabaseKey: sb_publishable_PAaowBw_ew28zcz47lfBjg_BnBYqTuG,
+  supabaseUrl:
+    "https://wunevzubuhjkkcqslwzu.supabase.co",
 
-  // Convención interna para autenticar con Student ID.
-  studentEmailDomain: "students.eea.invalid",
+  supabaseKey:
+    "sb_publishable_PAaowBw_ew28zcz47lfBjg_BnBYqTuG",
 
-  // Página que se abre después de ingresar.
-  platformPage: "index.html",
+  studentEmailDomain:
+    "students.eea.invalid",
 
-  loginPage: "login.html"
+  platformPage:
+    "index.html",
+
+  loginPage:
+    "login.html"
 });
 
+/* AUTENTICACIÓN */
 window.EEA_AUTH = (() => {
-  let client;
+  let client = null;
 
   function getClient() {
     const config = window.EEA_CONFIG;
+
+    if (!config) {
+      throw new Error("CONFIG");
+    }
 
     const validUrl =
       /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(
@@ -24,24 +36,37 @@ window.EEA_AUTH = (() => {
 
     if (
       !validUrl ||
-      !config.supabaseKey ||
+      typeof config.supabaseKey !== "string" ||
+      !config.supabaseKey.trim() ||
       config.supabaseKey.includes("PEGA_AQUI") ||
       config.supabaseKey.startsWith("sb_secret_")
     ) {
       throw new Error("CONFIG");
     }
 
-    // Verificar las antiguas claves anon con formato JWT.
+    /*
+      Si se utiliza una antigua clave JWT,
+      aceptar únicamente una clave con rol anon.
+    */
     if (config.supabaseKey.startsWith("eyJ")) {
       try {
-        const part = config.supabaseKey.split(".")[1];
+        const parts = config.supabaseKey.split(".");
+
+        if (parts.length !== 3) {
+          throw new Error("CONFIG");
+        }
+
+        let payloadBase64 = parts[1]
+          .replace(/-/g, "+")
+          .replace(/_/g, "/");
+
+        payloadBase64 = payloadBase64.padEnd(
+          Math.ceil(payloadBase64.length / 4) * 4,
+          "="
+        );
 
         const payload = JSON.parse(
-          atob(
-            part
-              .replace(/-/g, "+")
-              .replace(/_/g, "/")
-          )
+          atob(payloadBase64)
         );
 
         if (payload.role !== "anon") {
@@ -52,7 +77,10 @@ window.EEA_AUTH = (() => {
       }
     }
 
-    if (!window.supabase?.createClient) {
+    if (
+      !window.supabase ||
+      typeof window.supabase.createClient !== "function"
+    ) {
       throw new Error("SDK");
     }
 
@@ -73,11 +101,20 @@ window.EEA_AUTH = (() => {
     return client;
   }
 
+  /* VALIDAR CÓDIGOS DE ESTUDIANTES */
   function normalizeId(value) {
-    const id = String(value)
+    const id = String(value ?? "")
       .trim()
       .toUpperCase();
 
+    /*
+      Formatos admitidos:
+      EEA-EFK-004
+      EEA-EFT-001
+      EEA-EFA-013
+
+      Permite más de tres dígitos para crecimiento futuro.
+    */
     if (!/^EEA-(EFK|EFT|EFA)-\d{3,}$/.test(id)) {
       throw new Error("ID");
     }
@@ -85,8 +122,37 @@ window.EEA_AUTH = (() => {
     return id;
   }
 
+  /* ACEPTAR CORREO O STUDENT ID */
   function emailForId(value) {
-    const id = normalizeId(value).toLowerCase();
+    const input = String(value ?? "").trim();
+
+    if (!input) {
+      throw new Error("ID");
+    }
+
+    /*
+      Si se ingresa un correo,
+      utilizarlo directamente para autenticar.
+    */
+    if (input.includes("@")) {
+      const validEmail =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
+
+      if (!validEmail) {
+        throw new Error("ID");
+      }
+
+      return input.toLowerCase();
+    }
+
+    /*
+      Si se ingresa un Student ID,
+      convertirlo al alias interno de Supabase Auth.
+
+      EEA-EFT-001
+      → eea-eft-001@students.eea.invalid
+    */
+    const id = normalizeId(input).toLowerCase();
 
     return `${id}@${window.EEA_CONFIG.studentEmailDomain}`;
   }
