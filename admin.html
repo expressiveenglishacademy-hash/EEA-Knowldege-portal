@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <meta name="robots" content="noindex,nofollow">
+
+  <title>
+    Administración | Expressive English Academy
+  </title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f2f5f2;
+      color: #18354a;
+      font: 16px system-ui, sans-serif;
+    }
+
+    header {
+      background: #153958;
+      color: white;
+      padding: 22px max(
+        20px,
+        calc((100% - 1100px) / 2)
+      );
+
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header p {
+      margin: 4px 0;
+      color: #d8e5eb;
+      font-size: 13px;
+    }
+
+    header a {
+      color: white;
+    }
+
+    main {
+      max-width: 1140px;
+      margin: auto;
+      padding: 28px 20px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #dce5df;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    h1 {
+      font-size: 26px;
+      margin: 0 0 12px;
+    }
+
+    h2 {
+      font-size: 21px;
+      margin: 0 0 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 650;
+      margin: 18px 0 8px;
+    }
+
+    input,
+    select,
+    button {
+      font: inherit;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #b8c8c6;
+      border-radius: 8px;
+      min-height: 46px;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      background: #176951;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    .secondary {
+      background: #edf3ef;
+      color: #18354a;
+    }
+
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    button:focus-visible {
+      outline: 3px solid #b88022;
+      outline-offset: 3px;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: #5b6d77;
+      line-height: 1.6;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .notice {
+      padding: 14px;
+      border-radius: 8px;
+      background: #e7f2ec;
+      line-height: 1.6;
+      margin: 16px 0;
+    }
+
+    .error {
+      background: #fff0ee;
+      color: #842c2c;
+    }
+
+    .scroll {
+      overflow-x: auto;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 14px 10px;
+      text-align: left;
+      border-bottom: 1px solid #e0e7e3;
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 12px;
+      color: #5b6d77;
+    }
+
+    td small {
+      display: block;
+      margin-top: 5px;
+      color: #5b6d77;
+    }
+
+    #student-id {
+      text-transform: uppercase;
+    }
+
+    #save {
+      width: 100%;
+      margin-top: 22px;
+    }
+
+    #credentials {
+      overflow-wrap: anywhere;
+    }
+
+    #credentials code {
+      font-size: 15px;
+      user-select: all;
+    }
+
+    #credentials p {
+      margin: 8px 0;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 850px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .card {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div>
+      <strong>Expressive English Academy</strong>
+      <p>Administración de estudiantes</p>
+    </div>
+
+    <nav class="row">
+      <a href="index.html">
+        Ir a la plataforma
+      </a>
+
+      <button
+        type="button"
+        id="logout"
+        hidden
+      >
+        Cerrar sesión
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <p
+      id="access"
+      class="notice"
+      role="status"
+      aria-live="polite"
+    >
+      Verificando tu permiso de administrador…
+    </p>
+
+    <div id="panel" hidden>
+      <h1>Tu panel administrativo</h1>
+
+      <p class="hint" id="account"></p>
+
+      <div class="layout">
+        <section class="card">
+          <h2>Agregar estudiante</h2>
+
+          <p class="hint">
+            Crea su ficha y una cuenta para ingresar
+            con su Student ID.
+          </p>
+
+          <form id="create-form">
+            <label for="full-name">
+              Nombre completo
+            </label>
+
+            <input
+              id="full-name"
+              autocomplete="off"
+              minlength="2"
+              maxlength="150"
+              required
+            >
+
+            <label for="student-id">
+              Student ID
+            </label>
+
+            <input
+              id="student-id"
+              placeholder="EEA-EFT-001"
+              autocomplete="off"
+              spellcheck="false"
+              maxlength="16"
+              pattern="EEA-(EFK|EFT|EFA)-[0-9]{3,8}"
+              required
+            >
+
+            <p id="program" class="hint">
+              EFK: Kids · EFT: Teens · EFA: Adults
+            </p>
+
+            <label for="level">
+              Nivel académico
+            </label>
+
+            <select id="level" required></select>
+
+            <label for="group">
+              Grupo u horario · opcional
+            </label>
+
+            <input
+              id="group"
+              placeholder="Sábados · 1:00 a 3:00 p. m."
+              maxlength="80"
+            >
+
+            <label for="initial-password">
+              Contraseña inicial
+            </label>
+
+            <input
+              id="initial-password"
+              type="password"
+              autocomplete="new-password"
+              minlength="12"
+              maxlength="128"
+              aria-describedby="password-hint"
+              required
+            >
+
+            <p id="password-hint" class="hint">
+              Mínimo 12 caracteres.
+              Podés generar una contraseña y
+              entregarla de forma privada.
+            </p>
+
+            <div class="row">
+              <button
+                class="secondary"
+                id="generate"
+                type="button"
+              >
+                Generar
+              </button>
+
+              <button
+                class="secondary"
+                id="toggle"
+                type="button"
+                aria-pressed="false"
+              >
+                Mostrar
+              </button>
+            </div>
+
+            <button id="save" type="submit">
+              Crear estudiante y acceso
+            </button>
+
+            <p
+              id="form-status"
+              role="status"
+              aria-live="polite"
+              hidden
+            ></p>
+          </form>
+
+          <div
+            id="credentials"
+            class="notice"
+            hidden
+          >
+            <strong>Acceso creado</strong>
+
+            <p>
+              Usuario:
+              <code id="new-user"></code>
+            </p>
+
+            <p>
+              Contraseña:
+              <code id="new-password"></code>
+            </p>
+
+            <p class="hint">
+              Entregá estos datos en privado.
+              La contraseña no aparecerá en la lista.
+            </p>
+
+            <button
+              type="button"
+              id="hide-credentials"
+              class="secondary"
+            >
+              Ocultar datos
+            </button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Estudiantes registrados</h2>
+
+          <label for="search">
+            Buscar por nombre o código
+          </label>
+
+          <input
+            id="search"
+            type="search"
+            placeholder="Buscar estudiante…"
+            autocomplete="off"
+          >
+
+          <div class="row">
+            <button
+              id="refresh"
+              class="secondary"
+              type="button"
+            >
+              Actualizar lista
+            </button>
+          </div>
+
+          <p
+            id="list-status"
+            class="hint"
+            role="status"
+            aria-live="polite"
+          ></p>
+
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">
+                    ESTUDIANTE
+                  </th>
+
+                  <th scope="col">
+                    PROGRAMA
+                  </th>
+
+                  <th scope="col">
+                    NIVEL / GRUPO
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody id="students"></tbody>
+            </table>
+          </div>
+
+          <div class="row">
+            <button
+              type="button"
+              id="previous"
+              class="secondary"
+            >
+              Anterior
+            </button>
+
+            <button
+              type="button"
+              id="next"
+              class="secondary"
+            >
+              Siguiente
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+
+  <script>
+    (() => {
+      const $ = id =>
+        document.getElementById(id);
+
+      const programs = {
+        EFK: "English For Kids",
+        EFT: "English For Teens",
+        EFA: "English For Adults"
+      };
+
+      const pageSize = 25;
+
+      let client;
+      let busy = false;
+      let page = 0;
+      let request = 0;
+      let timer;
+
+      const esc = value =>
+        String(value ?? "").replace(
+          /[&<>"']/g,
+          character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+          }[character])
+        );
+
+      function message(
+        id,
+        text,
+        error = false
+      ) {
+        $(id).textContent = text;
+
+        $(id).className =
+          "notice" + (error ? " error" : "");
+
+        $(id).hidden = false;
+      }
+
+      function clearCredentials() {
+        $("new-user").textContent = "";
+        $("new-password").textContent = "";
+        $("credentials").hidden = true;
+      }
+
+      /* NIVELES */
+      for (let i = 1; i <= 12; i++) {
+        $("level").add(
+          new Option(
+            "Nivel " + i,
+            String(i)
+          )
+        );
+      }
+
+      /* PROGRAMA SEGÚN EL CÓDIGO */
+      $("student-id").addEventListener(
+        "input",
+        () => {
+          const field = $("student-id");
+          const position = field.selectionStart;
+
+          field.value =
+            field.value.toUpperCase();
+
+          field.setSelectionRange(
+            position,
+            position
+          );
+
+          const programCode =
+            field.value.split("-")[1];
+
+          $("program").textContent =
+            programs[programCode] ||
+            "EFK: Kids · EFT: Teens · EFA: Adults";
+        }
+      );
+
+      /* GENERAR CONTRASEÑA */
+      $("generate").addEventListener(
+        "click",
+        () => {
+          const bytes =
+            crypto.getRandomValues(
+              new Uint8Array(18)
+            );
+
+          const randomPart =
+            Array.from(
+              bytes,
+              number => number
+                .toString(16)
+                .padStart(2, "0")
+            ).join("");
+
+          $("initial-password").value =
+            "Aa7!" + randomPart;
+        }
+      );
+
+      /* MOSTRAR U OCULTAR CONTRASEÑA */
+      $("toggle").addEventListener(
+        "click",
+        () => {
+          const show =
+            $("initial-password").type ===
+            "password";
+
+          $("initial-password").type =
+            show ? "text" : "password";
+
+          $("toggle").textContent =
+            show ? "Ocultar" : "Mostrar";
+
+          $("toggle").setAttribute(
+            "aria-pressed",
+            String(show)
+          );
+        }
+      );
+
+      $("hide-credentials").addEventListener(
+        "click",
+        clearCredentials
+      );
+
+      window.addEventListener(
+        "pagehide",
+        clearCredentials
+      );
+
+      /* CERRAR SESIÓN */
+      $("logout").addEventListener(
+        "click",
+        async () => {
+          $("logout").disabled = true;
+
+          try {
+            const { error } =
+              await client.auth.signOut({
+                scope: "local"
+              });
+
+            if (error) throw error;
+
+            location.replace("login.html");
+          } catch {
+            $("logout").disabled = false;
+
+            message(
+              "access",
+              "No se pudo cerrar sesión. Intentá nuevamente.",
+              true
+            );
+          }
+        }
+      );
+
+      /* CONSULTAR ESTUDIANTES */
+      async function loadStudents() {
+        const version = ++request;
+
+        $("previous").disabled = true;
+        $("next").disabled = true;
+
+        $("students").replaceChildren();
+
+        $("list-status").textContent =
+          "Cargando estudiantes…";
+
+        try {
+          let query = client
+            .from("eea_students")
+            .select(
+              "student_id,full_name,program,current_level,group_name",
+              { count: "exact" }
+            )
+            .order("student_id");
+
+          const term = $("search").value
+            .trim()
+            .replace(
+              /[^\p{L}\p{N}\s-]/gu,
+              ""
+            )
+            .slice(0, 100);
+
+          if (term) {
+            query = query.or(
+              `full_name.ilike.%${term}%,` +
+              `student_id.ilike.%${term}%`
+            );
+          }
+
+          const { data, error, count } =
+            await query.range(
+              page * pageSize,
+              (page + 1) * pageSize - 1
+            );
+
+          if (version !== request) return;
+
+          if (error) throw error;
+
+          const rows = data || [];
+
+          $("students").innerHTML =
+            rows.map(student => `
+              <tr>
+                <td>
+                  ${esc(student.full_name)}
+
+                  <small>
+                    ${esc(student.student_id)}
+                  </small>
+                </td>
+
+                <td>
+                  ${esc(student.program)}
+                </td>
+
+                <td>
+                  Nivel ${esc(student.current_level)}
+
+                  <small>
+                    ${esc(
+                      student.group_name ||
+                      "Sin grupo asignado"
+                    )}
+                  </small>
+                </td>
+              </tr>
+            `).join("");
+
+          $("list-status").textContent =
+            count
+              ? `${count} estudiantes encontrados · Página ${page + 1}`
+              : "Todavía no hay estudiantes para mostrar con esta búsqueda.";
+
+          $("previous").disabled =
+            page === 0;
+
+          $("next").disabled =
+            (page + 1) * pageSize >=
+            (count || 0);
+
+        } catch {
+          if (version === request) {
+            $("list-status").textContent =
+              "No se pudo cargar la lista. " +
+              "Revisá la conexión y que ejecutaste " +
+              "el SQL de estudiantes.";
+          }
+        }
+      }
+
+      /* BÚSQUEDA Y PAGINACIÓN */
+      $("search").addEventListener(
+        "input",
+        () => {
+          clearTimeout(timer);
+
+          timer = setTimeout(() => {
+            page = 0;
+            loadStudents();
+          }, 300);
+        }
+      );
+
+      $("refresh").addEventListener(
+        "click",
+        () => {
+          page = 0;
+          loadStudents();
+        }
+      );
+
+      $("previous").addEventListener(
+        "click",
+        () => {
+          if (page > 0) {
+            page--;
+            loadStudents();
+          }
+        }
+      );
+
+      $("next").addEventListener(
+        "click",
+        () => {
+          page++;
+          loadStudents();
+        }
+      );
+
+      /* CREAR ESTUDIANTE */
+      $("create-form").addEventListener(
+        "submit",
+        async event => {
+          event.preventDefault();
+
+          if (busy) return;
+
+          busy = true;
+          $("save").disabled = true;
+
+          clearCredentials();
+
+          const studentId =
+            $("student-id").value
+              .trim()
+              .toUpperCase();
+
+          const password =
+            $("initial-password").value;
+
+          message(
+            "form-status",
+            "Creando ficha y acceso…"
+          );
+
+          try {
+            const session =
+              await client.auth.getSession();
+
+            if (
+              session.error ||
+              !session.data.session
+            ) {
+              throw new Error(
+                "Tu sesión terminó. Volvé a ingresar."
+              );
+            }
+
+            const { data, error } =
+              await client.functions.invoke(
+                "eea-create-student",
+                {
+                  headers: {
+                    Authorization:
+                      `Bearer ${session.data.session.access_token}`
+                  },
+
+                  body: {
+                    student_id:
+                      studentId,
+
+                    full_name:
+                      $("full-name").value.trim(),
+
+                    current_level:
+                      Number($("level").value),
+
+                    group_name:
+                      $("group").value.trim(),
+
+                    password
+                  }
+                }
+              );
+
+            if (error) {
+              let detail =
+                "No se pudo crear el estudiante. " +
+                "Revisá que la función " +
+                "eea-create-student esté desplegada " +
+                "y consultá la lista antes de reintentar.";
+
+              if (
+                error.context &&
+                typeof error.context.json ===
+                  "function"
+              ) {
+                try {
+                  const body =
+                    await error.context.json();
+
+                  if (body.message) {
+                    detail = body.message;
+                  }
+                } catch {
+                  // Conservar el mensaje general.
+                }
+              }
+
+              throw new Error(detail);
+            }
+
+            $("new-user").textContent =
+              studentId;
+
+            $("new-password").textContent =
+              password;
+
+            $("credentials").hidden =
+              false;
+
+            $("create-form").reset();
+
+            $("initial-password").type =
+              "password";
+
+            $("toggle").textContent =
+              "Mostrar";
+
+            $("toggle").setAttribute(
+              "aria-pressed",
+              "false"
+            );
+
+            $("program").textContent =
+              "EFK: Kids · EFT: Teens · EFA: Adults";
+
+            message(
+              "form-status",
+              data?.message ||
+              "Estudiante creado correctamente."
+            );
+
+            $("search").value = "";
+            page = 0;
+
+            await loadStudents();
+
+          } catch (error) {
+            message(
+              "form-status",
+              error.message ||
+              "No se pudo completar la operación.",
+              true
+            );
+          } finally {
+            busy = false;
+            $("save").disabled = false;
+          }
+        }
+      );
+
+      /* VERIFICAR ADMINISTRADOR */
+      async function initialize() {
+        try {
+          client =
+            window.EEA_AUTH.getClient();
+
+          const { data, error } =
+            await client.auth.getUser();
+
+          if (error || !data.user) {
+            location.replace("login.html");
+            return;
+          }
+
+          $("logout").hidden = false;
+
+          const permission = await client
+            .from("portal_admins")
+            .select("user_id")
+            .eq("user_id", data.user.id)
+            .maybeSingle();
+
+          if (permission.error) {
+            throw new Error(
+              "No se pudo consultar el permiso. " +
+              "Revisá la tabla portal_admins " +
+              "y sus reglas RLS."
+            );
+          }
+
+          if (!permission.data) {
+            throw new Error(
+              "Tu cuenta no tiene permisos de administrador."
+            );
+          }
+
+          client.auth.onAuthStateChange(
+            event => {
+              if (event === "SIGNED_OUT") {
+                $("panel").hidden = true;
+                clearCredentials();
+                location.replace("login.html");
+              }
+            }
+          );
+
+          window.addEventListener(
+            "pageshow",
+            event => {
+              if (event.persisted) {
+                location.reload();
+              }
+            }
+          );
+
+          $("account").textContent =
+            "Sesión: " + data.user.email;
+
+          $("access").hidden = true;
+          $("panel").hidden = false;
+
+          await loadStudents();
+
+        } catch (error) {
+          message(
+            "access",
+            error.message === "CONFIG"
+              ? "Revisá la configuración de Supabase."
+              : error.message ||
+                "No se pudo abrir el panel.",
+            true
+          );
+        }
+      }
+
+      initialize();
+    })();
+  </script>
+</body>
+</html>
