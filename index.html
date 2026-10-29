@@ -1,80 +1,27 @@
 <!doctype html>
 <html lang="es">
 <head>
-
-  <!-- Ocultar el portal mientras se verifica la sesión -->
-<style>
-  html:not([data-eea-auth="ready"]) body {
-    visibility: hidden !important;
-  }
-</style>
-
-<!-- Conexión con Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-config.js"></script>
-
-<!-- Verificación de acceso -->
-<script>
-  (() => {
-    function irAlLogin() {
-      document.documentElement.removeAttribute(
-        "data-eea-auth"
-      );
-
-      window.location.replace("login.html");
-    }
-
-    async function verificarAcceso() {
-      try {
-        if (!window.EEA_AUTH) {
-          irAlLogin();
-          return;
-        }
-
-        const client = window.EEA_AUTH.getClient();
-
-        const { data, error } =
-          await client.auth.getUser();
-
-        if (error || !data?.user) {
-          irAlLogin();
-          return;
-        }
-
-        // Hay un usuario autenticado: mostrar el portal.
-        document.documentElement.setAttribute(
-          "data-eea-auth",
-          "ready"
-        );
-
-        // Si cierra sesión, regresar al login.
-        client.auth.onAuthStateChange(event => {
-          if (event === "SIGNED_OUT") {
-            irAlLogin();
-          }
-        });
-
-        // Volver a verificar al regresar con el botón Atrás.
-        window.addEventListener("pageshow", event => {
-          if (event.persisted) {
-            window.location.reload();
-          }
-        });
-      } catch {
-        irAlLogin();
-      }
-    }
-
-    verificarAcceso();
-  })();
-</script>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
   <meta name="theme-color" content="#143c45">
-  <title>EEA · Practice Hub</title>
+
+  <title>
+    Plataforma de apoyo | Expressive English Academy
+  </title>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
 
     body {
       margin: 0;
@@ -90,7 +37,9 @@
       padding: 22px;
     }
 
-    .wrap, main, footer {
+    .wrap,
+    main,
+    footer {
       max-width: 1080px;
       margin: auto;
     }
@@ -105,13 +54,50 @@
       line-height: 1.2;
     }
 
-    h2, h3 { line-height: 1.35; }
-    h2 { font-size: 23px; }
-    h3 { font-size: 18px; }
+    h2,
+    h3 {
+      line-height: 1.35;
+    }
+
+    h2 {
+      font-size: 23px;
+    }
+
+    h3 {
+      font-size: 18px;
+    }
 
     .brand {
       font-size: 25px;
       font-weight: 800;
+    }
+
+    .session-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .session-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .session-actions a {
+      color: white;
+    }
+
+    .access-message {
+      max-width: 1040px;
+      margin: 24px auto;
+      padding: 16px;
+      background: white;
+      border: 1px solid #dce5df;
+      border-radius: 10px;
     }
 
     .tag {
@@ -122,9 +108,11 @@
       letter-spacing: 1px;
     }
 
-    .grid, .rules {
+    .grid,
+    .rules {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns:
+        repeat(auto-fit, minmax(250px, 1fr));
       gap: 18px;
     }
 
@@ -136,7 +124,9 @@
       margin: 20px 0;
     }
 
-    .grid .card { margin: 0; }
+    .grid .card {
+      margin: 0;
+    }
 
     .rule {
       background: #f5f7f3;
@@ -144,8 +134,13 @@
       border-radius: 10px;
     }
 
-    .rule ul { padding-left: 20px; }
-    .rule li { margin: 12px 0; }
+    .rule ul {
+      padding-left: 20px;
+    }
+
+    .rule li {
+      margin: 12px 0;
+    }
 
     .notice {
       background: #e9f1e9;
@@ -166,14 +161,23 @@
       cursor: pointer;
     }
 
-    button:hover { background: #104d3c; }
+    button:hover {
+      background: #104d3c;
+    }
+
+    button:disabled {
+      opacity: .65;
+      cursor: wait;
+    }
 
     .secondary {
       background: #e4ece7;
       color: #204837;
     }
 
-    .secondary:hover { background: #d3e2d9; }
+    .secondary:hover {
+      background: #d3e2d9;
+    }
 
     .example {
       background: #f7f6ef;
@@ -182,7 +186,9 @@
       margin: 14px 0;
     }
 
-    .example p { margin: 6px 0; }
+    .example p {
+      margin: 6px 0;
+    }
 
     .reading {
       margin: 20px 0;
@@ -196,19 +202,23 @@
       line-height: 1.9;
     }
 
-    .muted, footer {
+    .muted,
+    footer {
       color: #53676c;
       font-size: 14px;
     }
 
-    .table-scroll { overflow-x: auto; }
+    .table-scroll {
+      overflow-x: auto;
+    }
 
     table {
       width: 100%;
       border-collapse: collapse;
     }
 
-    td, th {
+    td,
+    th {
       border-bottom: 1px solid #e1e6e2;
       padding: 12px;
       text-align: left;
@@ -247,7 +257,9 @@
       border-radius: 8px;
     }
 
-    .incorrect { background: #fff0df; }
+    .incorrect {
+      background: #fff0df;
+    }
 
     .actions {
       display: flex;
@@ -269,7 +281,9 @@
       font-weight: 700;
     }
 
-    footer { padding: 25px 20px; }
+    footer {
+      padding: 25px 20px;
+    }
 
     button:focus-visible,
     input:focus-visible,
@@ -287,43 +301,320 @@
       color: #143c45;
     }
 
-    .skip:focus { top: 0; }
+    .skip:focus {
+      top: 0;
+    }
 
     @media (max-width: 550px) {
-      main { padding: 22px 14px; }
-      .card { padding: 18px; }
-      td, th { padding: 8px; }
+      main {
+        padding: 22px 14px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      td,
+      th {
+        padding: 8px;
+      }
     }
   </style>
 
- <script src="./content.js" defer></script>
-<script src="./app.js" defer></script>
-<script src="./grammar.js" defer></script>
+  <!-- Mantener los archivos académicos existentes -->
+  <script src="./content.js" defer></script>
+  <script src="./app.js" defer></script>
+  <script src="./grammar.js" defer></script>
 </head>
 
 <body>
-  <a class="skip" href="#app">Ir al contenido</a>
+  <a class="skip" href="#app">
+    Ir al contenido
+  </a>
 
   <header>
-    <div class="wrap">
-      <div class="brand">EEA · Practice Hub</div>
-      <div>Embrace the Extraordinary.</div>
+    <div class="wrap session-header">
+      <div>
+        <div class="brand">
+          Expressive English Academy
+        </div>
+
+        <div>
+          Embrace the Extraordinary.
+        </div>
+      </div>
+
+      <nav
+        class="session-actions"
+        aria-label="Sesión"
+      >
+        <a
+          id="admin-link"
+          href="admin.html"
+          hidden
+        >
+          Panel administrativo
+        </a>
+
+        <button
+          type="button"
+          id="logout"
+          hidden
+        >
+          Cerrar sesión
+        </button>
+      </nav>
     </div>
   </header>
 
-  <main id="app" tabindex="-1"></main>
+  <div
+    id="access-message"
+    class="access-message"
+    role="status"
+    aria-live="polite"
+  >
+    Verificando tu acceso…
+  </div>
+
+  <!-- Los temas permanecen ocultos hasta verificar la cuenta -->
+  <main
+    id="app"
+    tabindex="-1"
+    hidden
+  ></main>
 
   <noscript>
-    Activa JavaScript para abrir los temas y ejercicios.
+    Activá JavaScript para abrir los temas y ejercicios.
   </noscript>
 
   <footer>
-    Expressive English Academy · Beta de apoyo educativo.<br>
-    Sin cuentas privadas. El avance se guarda solo en este navegador;
-    no se envía a EEA.
-    En un dispositivo compartido, las personas de la misma categoría
-    comparten el avance.
-    Borrar los datos del sitio elimina ese registro.
+    Expressive English Academy ·
+    Plataforma de apoyo educativo.
+    <br>
+    El avance de esta versión se guarda en este
+    navegador por categoría; todavía no está separado
+    por cuenta ni sincronizado con Supabase.
+    En equipos compartidos, cerrá sesión al terminar.
   </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+
+  <script>
+    (() => {
+      const content =
+        document.getElementById("app");
+
+      const status =
+        document.getElementById("access-message");
+
+      const logout =
+        document.getElementById("logout");
+
+      const adminLink =
+        document.getElementById("admin-link");
+
+      let client;
+      let closing = false;
+
+      /* REGRESAR AL LOGIN */
+      function goToLogin() {
+        content.hidden = true;
+        adminLink.hidden = true;
+        logout.hidden = true;
+
+        window.location.replace("login.html");
+      }
+
+      /* MOSTRAR UN ERROR SIN REVELAR LOS TEMAS */
+      function showError(text) {
+        content.hidden = true;
+        status.hidden = false;
+        status.replaceChildren();
+
+        const description =
+          document.createElement("p");
+
+        description.textContent = text;
+
+        const retry =
+          document.createElement("button");
+
+        retry.type = "button";
+        retry.textContent = "Reintentar";
+
+        retry.addEventListener(
+          "click",
+          () => window.location.reload()
+        );
+
+        const login =
+          document.createElement("a");
+
+        login.href = "login.html";
+        login.textContent = "Volver al login";
+        login.style.marginLeft = "16px";
+
+        status.append(
+          description,
+          retry,
+          login
+        );
+      }
+
+      /* CERRAR SESIÓN EN ESTE NAVEGADOR */
+      logout.addEventListener(
+        "click",
+        async () => {
+          if (closing || !client) return;
+
+          closing = true;
+          logout.disabled = true;
+
+          logout.textContent =
+            "Cerrando sesión…";
+
+          try {
+            const { error } =
+              await client.auth.signOut({
+                scope: "local"
+              });
+
+            if (error) throw error;
+
+            goToLogin();
+          } catch {
+            closing = false;
+            logout.disabled = false;
+
+            logout.textContent =
+              "Cerrar sesión";
+
+            showError(
+              "No se pudo cerrar la sesión. " +
+              "Revisá tu conexión y volvé a intentarlo."
+            );
+          }
+        }
+      );
+
+      /* COMPROBAR SESIÓN Y PERMISOS */
+      async function verifyAccess() {
+        try {
+          client =
+            window.EEA_AUTH.getClient();
+
+          client.auth.onAuthStateChange(
+            event => {
+              if (event === "SIGNED_OUT") {
+                goToLogin();
+              }
+            }
+          );
+
+          const session =
+            await client.auth.getSession();
+
+          if (session.error) {
+            throw session.error;
+          }
+
+          if (!session.data.session) {
+            goToLogin();
+            return;
+          }
+
+          /* Validar el usuario contra Supabase. */
+          const { data, error } =
+            await client.auth.getUser();
+
+          if (error) throw error;
+
+          if (!data.user) {
+            goToLogin();
+            return;
+          }
+
+          logout.hidden = false;
+
+          /* Consultar si es administrador. */
+          const permission = await client
+            .from("portal_admins")
+            .select("user_id")
+            .eq("user_id", data.user.id)
+            .maybeSingle();
+
+          if (permission.error) {
+            showError(
+              "No se pudo verificar el permiso " +
+              "de tu cuenta. Revisá la conexión " +
+              "y las reglas de la tabla portal_admins."
+            );
+
+            return;
+          }
+
+          const isAdmin =
+            Boolean(permission.data);
+
+          /*
+            Permitir que el administrador revise
+            voluntariamente la vista de estudiantes:
+            index.html?vista=estudiante
+          */
+          const preview =
+            new URLSearchParams(
+              window.location.search
+            ).get("vista") === "estudiante";
+
+          /* ADMINISTRADOR → PANEL */
+          if (isAdmin && !preview) {
+            status.textContent =
+              "Abriendo tu panel administrativo…";
+
+            window.location.replace(
+              "admin.html"
+            );
+
+            return;
+          }
+
+          /* ESTUDIANTE → TEMAS */
+          adminLink.hidden = !isAdmin;
+          status.hidden = true;
+          content.hidden = false;
+
+        } catch (error) {
+          showError(
+            error?.message === "CONFIG"
+              ? "Revisá la URL y la clave publicable " +
+                "de supabase-config.js."
+              : "No pudimos verificar tu sesión. " +
+                "Revisá tu conexión o volvé a iniciar sesión."
+          );
+        }
+      }
+
+      /* EVITAR MOSTRAR TEMAS DESDE LA CACHÉ AL VOLVER */
+      window.addEventListener(
+        "pagehide",
+        () => {
+          content.hidden = true;
+        }
+      );
+
+      window.addEventListener(
+        "pageshow",
+        event => {
+          if (event.persisted) {
+            content.hidden = true;
+            window.location.reload();
+          }
+        }
+      );
+
+      verifyAccess();
+    })();
+  </script>
 </body>
 </html>
