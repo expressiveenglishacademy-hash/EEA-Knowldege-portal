@@ -8,11 +8,24 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="EEA Portal">
-  <title>Expressive English Academy | App Oficial</title>
+  <title>Expressive English Academy | Plataforma y App de Aprendizaje</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="LOGO%20EEA.jpg">
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            eeaNavy: '#153958',
+            eeaGreen: '#176951',
+            eeaBg: '#f2f5f2'
+          }
+        }
+      }
+    }
+  </script>
   <style>
     body { background-color: #f2f5f2; color: #18354a; font-family: system-ui, -apple-system, sans-serif; }
     .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom, 12px), 12px); }
@@ -28,6 +41,7 @@
   <script src="content.js"></script>
   <script src="app.js"></script>
   <script>
+    // Registro del Service Worker PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(() => {});
