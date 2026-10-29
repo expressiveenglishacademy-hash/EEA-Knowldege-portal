@@ -1,0 +1,19 @@
+{
+  "id": "/EEA-Knowldege-portal/",
+  "name": "Expressive English Academy",
+  "short_name": "EEA Portal",
+  "description": "Plataforma oficial de aprendizaje de Expressive English Academy",
+  "start_url": "/EEA-Knowldege-portal/login.html",
+  "scope": "/EEA-Knowldege-portal/",
+  "display": "standalone",
+  "background_color": "#f2f5f2",
+  "theme_color": "#153958",
+  "icons": [
+    {
+      "src": "LOGO%20EEA.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
