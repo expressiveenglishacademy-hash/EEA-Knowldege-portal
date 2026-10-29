@@ -1,12 +1,13 @@
-// sw.js para tu repositorio GitHub Pages
-const CACHE_NAME = 'eea-gh-v1';
+// Service Worker v3 - Actualización automática
+const CACHE_NAME = 'eea-gh-v3';
 const ASSETS = [
-  './login.html',
+  './',
   './index.html',
   './content.js',
   './app.js',
   './supabase-config.js',
-  './LOGO%20EEA.jpg'
+  './LOGO%20EEA.jpg',
+  './manifest.json'
 ];
 
 self.addEventListener('install', (e) => {
@@ -26,6 +27,18 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+          return res;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then((res) => res || fetch(e.request))
   );
