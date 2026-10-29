@@ -3,7 +3,7 @@
   "name": "Expressive English Academy",
   "short_name": "EEA Portal",
   "description": "Plataforma oficial de aprendizaje de Expressive English Academy",
-  "start_url": "./index.html",
+  "start_url": "./login.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
