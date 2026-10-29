@@ -1,6 +1,73 @@
 <!doctype html>
 <html lang="es">
 <head>
+
+  <!-- Ocultar el portal mientras se verifica la sesión -->
+<style>
+  html:not([data-eea-auth="ready"]) body {
+    visibility: hidden !important;
+  }
+</style>
+
+<!-- Conexión con Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+
+<!-- Verificación de acceso -->
+<script>
+  (() => {
+    function irAlLogin() {
+      document.documentElement.removeAttribute(
+        "data-eea-auth"
+      );
+
+      window.location.replace("login.html");
+    }
+
+    async function verificarAcceso() {
+      try {
+        if (!window.EEA_AUTH) {
+          irAlLogin();
+          return;
+        }
+
+        const client = window.EEA_AUTH.getClient();
+
+        const { data, error } =
+          await client.auth.getUser();
+
+        if (error || !data?.user) {
+          irAlLogin();
+          return;
+        }
+
+        // Hay un usuario autenticado: mostrar el portal.
+        document.documentElement.setAttribute(
+          "data-eea-auth",
+          "ready"
+        );
+
+        // Si cierra sesión, regresar al login.
+        client.auth.onAuthStateChange(event => {
+          if (event === "SIGNED_OUT") {
+            irAlLogin();
+          }
+        });
+
+        // Volver a verificar al regresar con el botón Atrás.
+        window.addEventListener("pageshow", event => {
+          if (event.persisted) {
+            window.location.reload();
+          }
+        });
+      } catch {
+        irAlLogin();
+      }
+    }
+
+    verificarAcceso();
+  })();
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#143c45">
