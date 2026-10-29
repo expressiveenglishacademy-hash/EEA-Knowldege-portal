@@ -5,8 +5,16 @@
   const app = document.getElementById('app');
   if (!app) return;
 
+  // Recuperar datos o usar invitado si no hay sesión
+  let student = { full_name: 'Estudiante EEA', student_id: 'EEA-EFT-001', program: 'EFT' };
+  try {
+    const saved = localStorage.getItem('eea_student_user');
+    if (saved) student = JSON.parse(saved);
+  } catch (e) {}
+
   let activeTab = 'courses';
   let activeLevelIdx = 0;
+  let activeTopic = null;
   let completedTopics = {};
   try {
     completedTopics = JSON.parse(localStorage.getItem('eea_completed_topics') || '{}');
@@ -215,11 +223,11 @@
           <p class="text-xs text-slate-500 mt-1">Tocá la tarjeta para voltearla y practicar la frase.</p>
         </div>
 
-        <div class="bg-white rounded-3xl border-2 border-slate-200 p-8 shadow-md cursor-pointer select-none min-h-[220px] flex flex-col justify-center items-center space-y-3">
-          <span class="text-xs text-slate-400 uppercase font-semibold">Frase en Inglés</span>
+        <div id="fc-card" onclick="this.classList.toggle('flipped')" class="bg-white rounded-3xl border-2 border-slate-200 p-8 shadow-md cursor-pointer select-none min-h-[240px] flex flex-col justify-center items-center space-y-3">
+          <span class="text-xs text-slate-400 uppercase font-semibold">Frase en Inglés (Tocar para voltear)</span>
           <h3 class="text-2xl font-black text-[#153958]">"Nice to meet you"</h3>
           <p class="text-xs text-indigo-700 font-mono">/naɪs tuː miːt juː/</p>
-          <button onclick="window.speakText('Nice to meet you')" class="px-4 py-1.5 bg-[#edf4f0] text-[#176951] rounded-full text-xs font-bold">🔊 Escuchar audio</button>
+          <button onclick="event.stopPropagation(); window.speakText('Nice to meet you')" class="px-4 py-1.5 bg-[#edf4f0] text-[#176951] rounded-full text-xs font-bold">🔊 Escuchar audio</button>
         </div>
       </div>
     `;
@@ -249,7 +257,7 @@
     `;
   }
 
-  // Métodos globales
+  // Global actions for onclick
   window.switchTab = (tab) => { activeTab = tab; render(); };
   window.selectLevel = (idx) => { activeLevelIdx = idx; render(); };
   window.speakText = (text) => { speak(text); };
@@ -260,8 +268,9 @@
   };
   window.openTopicDetails = (lvlIdx, tIdx) => {
     const topic = window.EEA[lvlIdx].topics[tIdx];
-    alert("Tema: " + topic[0] + "\n\nRegla: " + topic[1] + "\n\nEjemplo: " + topic[2] + "\n\nLectura: " + topic[3]);
+    alert("Tema: " + topic[0] + "\\n\\nRegla: " + topic[1] + "\\n\\nEjemplo: " + topic[2] + "\\n\\nLectura: " + topic[3]);
   };
 
+  // Initial render
   render();
 })();
