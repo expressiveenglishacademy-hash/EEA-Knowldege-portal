@@ -1,552 +1,373 @@
-// app.js - Plataforma Oficial EEA con Navegación Fluida (100% Sin Alertas ni Pop-outs)
+// app.js - Portal EEA (rediseño académico). Reemplaza al app.js anterior; usa los mismos content.js y estilos base.
 (function () {
   'use strict';
-
   const app = document.getElementById('app');
   if (!app) return;
 
-  let activeTab = 'courses'; // 'courses' | 'flashcards' | 'phonetics'
-  let activeLevelIdx = 0;
-  let activeTopicIdx = null; // null = lista de temas; número = pantalla completa de estudio
-  let activeTopicSection = 'rule'; // 'rule' | 'reading' | 'grammar' | 'speaking'
+  /* ---------- Fuentes y estilos ---------- */
+  const font = document.createElement('link');
+  font.rel = 'stylesheet';
+  font.href = 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap';
+  document.head.appendChild(font);
+  const css = document.createElement('style');
+  css.textContent = `
+  :root{--navy:#153958;--green:#176951;--gold:#bb944c;--ink:#18354a;--line:#dde5df;--paper:#f7f6ef}
+  body{font-family:Inter,system-ui,sans-serif;background:#f2f5f2;color:var(--ink);line-height:1.5}
+  .serif{font-family:Fraunces,Georgia,serif;letter-spacing:-.01em}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;font-weight:600;font-size:.88rem;padding:.65rem 1.1rem;border-radius:10px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .b-green{background:var(--green);color:#fff}.b-green:hover:not(:disabled){background:#10543f}
+  .b-navy{background:var(--navy);color:#fff}.b-navy:hover:not(:disabled){background:#1e4a70}
+  .b-soft{background:#fff;border:1px solid var(--line);color:var(--ink)}.b-soft:hover{border-color:var(--green)}
+  .btn:focus-visible,.tab:focus-visible,.opt:focus-visible,.pill:focus-visible,.step:focus-visible,.chip:focus-visible,.flip:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  .tab{display:inline-flex;gap:.4rem;align-items:center;padding:.5rem .9rem;border-radius:8px;font-size:.88rem;font-weight:600;color:#cfe0ea}
+  .tab.on,.tab:hover{background:rgba(255,255,255,.14);color:#fff}
+  .chip{display:inline-flex;gap:.35rem;align-items:center;background:rgba(255,255,255,.12);padding:.4rem .7rem;border-radius:8px;font-size:.8rem;font-weight:600;color:#fff}
+  .hero{background:var(--navy);color:#fff;border-radius:14px;border-left:6px solid var(--gold)}
+  .bar{height:8px;background:#e3e9e5;border-radius:99px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--gold);border-radius:99px;transition:width .4s}
+  .hero .bar{background:rgba(255,255,255,.22)}
+  .pill{flex:none;padding:.45rem .9rem;border-radius:99px;font-size:.82rem;font-weight:600;background:#fff;border:1px solid var(--line);display:inline-flex;gap:.3rem;align-items:center}
+  .pill.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .opt{width:100%;text-align:left;padding:.85rem 1rem;border:1.5px solid var(--line);border-radius:10px;font-weight:600;font-size:.92rem;background:#fff;transition:border-color .15s,background .15s}
+  .opt:hover:not(:disabled){border-color:var(--green)}.opt.sel{border-color:var(--green);background:#edf4f0}
+  .opt.ok{border-color:#16a34a;background:#dcfce7}.opt.bad{border-color:#e11d48;background:#ffe4e6}
+  .step{width:100%;text-align:left;padding:.6rem .7rem;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:.78rem;font-weight:600;display:flex;gap:.5rem;align-items:center}
+  .step b{width:22px;height:22px;border-radius:50%;background:#e8eeea;display:grid;place-items:center;font-size:.7rem;flex:none}
+  .step.on{border-color:var(--green);background:#edf4f0}.step.on b,.step.past b{background:var(--green);color:#fff}
+  .flip{perspective:1000px;cursor:pointer}.flip>div{position:relative;min-height:280px;transition:transform .5s;transform-style:preserve-3d}.flip.on>div{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7rem;padding:1.5rem;text-align:center;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 24px rgba(21,57,88,.08)}
+  .back{transform:rotateY(180deg);background:var(--paper)}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#cfd8d2;margin:0 3px}.dot.on{background:var(--green)}
+  .quote{background:var(--paper);border-left:4px solid var(--gold);border-radius:0 10px 10px 0}
+  .rec{animation:pulse 1.2s infinite}@keyframes pulse{50%{opacity:.6}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}`;
+  document.head.appendChild(css);
 
-  let currentReadingAnswer = null;
-  let currentReadingChecked = false;
-  let currentGrammarAnswer = null;
-  let currentGrammarChecked = false;
-  let isRecording = false;
-  let recordSeconds = 0;
-  let recordTimer = null;
-  let hasRecorded = false;
+  /* ---------- Iconos ---------- */
+  const P = {
+    book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14zM20 17v4H6.5',
+    bolt: 'M13 2 3 14h9l-1 8 10-12h-9l1-8z',
+    ear: 'M3 18v-6a9 9 0 0 1 18 0v6M3 18a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2zM21 18a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z',
+    vol: 'M11 5 6 9H2v6h4l5 4V5zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14',
+    mic: 'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3',
+    stop: 'M6 6h12v12H6z',
+    check: 'M20 6 9 17l-5-5',
+    left: 'M19 12H5M12 19l-7-7 7-7',
+    flame: 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2.5-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.2 3 5 1.5 1.5 2 3.5 2 5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z',
+    dl: 'M12 3v12m0 0-4-4m4 4 4-4M4 21h16'
+  };
+  const ic = (n, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P[n]}"/></svg>`;
 
-  let currentCardIdx = 0;
-  let isCardFlipped = false;
-  const sampleCards = [
+  /* ---------- Utilidades ---------- */
+  const LS = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
+  const SV = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const shuffle = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
+  const fmt = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+
+  let done = LS('eea_completed_topics', {});
+  let days = LS('eea_days', []);
+  const mark = () => { const t = fmt(new Date()); if (!days.includes(t)) { days.push(t); SV('eea_days', days.slice(-400)); } };
+  const streak = () => {
+    let n = 0; const d = new Date();
+    if (!days.includes(fmt(d))) d.setDate(d.getDate() - 1);
+    while (days.includes(fmt(d))) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  };
+  const save = () => SV('eea_completed_topics', done);
+  const levels = () => window.EEA || [];
+  const tid = (l, t) => `l${l + 1}-t${t + 1}`;
+  const levelDone = l => ((levels()[l] || {}).topics || []).filter((_, t) => done[tid(l, t)]).length;
+  const totals = () => levels().reduce((a, L, i) => { a.t += (L.topics || []).length; a.d += levelDone(i); return a; }, { t: 0, d: 0 });
+
+  const cards = [
     { en: 'Nice to meet you', es: 'Mucho gusto / Encantado de conocerte', ipa: '/naɪs tuː miːt juː/' },
     { en: 'How do you spell your name?', es: '¿Cómo se deletrea tu nombre?', ipa: '/haʊ duː juː spɛl jʊər neɪm/' },
     { en: 'Where are you from?', es: '¿De dónde sos / eres?', ipa: '/wɛər ɑːr juː frɒm/' },
-    { en: 'I am nineteen years old', es: 'Tengo 19 años (en inglés se usa verbo Be)', ipa: '/aɪ æm ˌnaɪnˈtiːn jɪərz oʊld/' },
+    { en: 'I am nineteen years old', es: 'Tengo 19 años (en inglés se usa el verbo Be)', ipa: '/aɪ æm ˌnaɪnˈtiːn jɪərz oʊld/' },
     { en: 'What time does the class start?', es: '¿A qué hora empieza la clase?', ipa: '/wɒt taɪm dʌz ðə klɑːs stɑːrt/' },
     { en: 'Could you please repeat that?', es: '¿Podrías repetir eso, por favor?', ipa: '/kʊd juː pliːz rɪˈpiːt ðæt/' },
-    { en: 'I am looking forward to it', es: 'Lo espero con entusiasmo / muchas ganas', ipa: '/aɪ æm ˈlʊkɪŋ ˈfɔːrwərd tuː ɪt/' },
-    { en: 'Fluency over accuracy', es: 'Priorizá la fluidez y comunicación sobre el miedo a fallar', ipa: '/ˈfluːənsi ˈoʊvər ˈækjərəsi/' }
+    { en: 'I am looking forward to it', es: 'Lo espero con muchas ganas', ipa: '/aɪ æm ˈlʊkɪŋ ˈfɔːrwərd tuː ɪt/' },
+    { en: 'Fluency over accuracy', es: 'Priorizá la fluidez y la comunicación sobre el miedo a fallar', ipa: '/ˈfluːənsi ˈoʊvər ˈækjərəsi/' }
   ];
+  const words = ['name', 'teacher', 'student', 'morning', 'afternoon', 'welcome', 'practice', 'extraordinary', 'friend', 'English', 'family', 'community'];
+  const keys = ['rule', 'reading', 'grammar', 'speaking'];
+  const stepNames = ['Regla', 'Lectura', 'Gramática', 'Práctica oral'];
 
-  let completedTopics = {};
-  try {
-    completedTopics = JSON.parse(localStorage.getItem('eea_completed_topics') || '{}');
-  } catch (e) {}
+  /* ---------- Estado ---------- */
+  let tab = 'courses', lvl = 0, tIdx = null, sec = 'rule';
+  let rOpts = [], gOpts = [], rAns = null, rChk = false, gAns = null, gChk = false;
+  let ci = 0, flipped = false, showHelp = false, deferred = null;
+  let recording = false, secs = 0, timer = null, mr = null, chunks = [], audioURL = null, recErr = '';
 
-  let deferredInstallPrompt = null;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredInstallPrompt = e;
-    render();
-  });
-
-  function saveProgress() {
-    try {
-      localStorage.setItem('eea_completed_topics', JSON.stringify(completedTopics));
-    } catch (e) {}
-  }
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; render(true); });
 
   function speak(text, rate = 0.9) {
     if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
+    speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    u.rate = rate;
-    window.speechSynthesis.speak(u);
+    u.lang = 'en-US'; u.rate = rate;
+    speechSynthesis.speak(u);
   }
 
-  function render() {
-    const levels = window.EEA || [];
-    const currentLevel = levels[activeLevelIdx] || { title: 'Nivel 1', topics: [], sounds: [] };
-
-    let html = `
-      <!-- Header Superior -->
-      <header class="sticky top-0 z-40 bg-[#153958] text-white shadow-md border-b border-[#20486c]">
-        <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-3">
-            <img src="LOGO%20EEA.jpg" alt="EEA" class="w-10 h-10 rounded-lg object-contain bg-white/10 p-0.5 border border-white/20" onerror="this.style.display='none'">
-            <div>
-              <span class="font-extrabold text-base tracking-tight text-white block leading-none">Expressive English</span>
-              <p class="text-[11px] text-[#b9d9d0] hidden sm:block">Embrace the Extraordinary · Portal Oficial</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <div class="flex items-center gap-1 bg-[#1a4468] text-amber-300 px-2.5 py-1 rounded-lg text-xs font-bold">
-              🔥 <span>3d racha</span>
-            </div>
-            ${deferredInstallPrompt ? `
-              <button id="install-btn" class="flex items-center gap-1.5 bg-[#176951] hover:bg-[#10543f] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">
-                📲 Instalar App
-              </button>
-            ` : `
-              <button onclick="alert('En Chrome: menú de 3 puntos ⋮ ➔ Instalar aplicación.\\nEn iPhone Safari: Compartir ➔ Agregar a pantalla de inicio.')" class="flex items-center gap-1 bg-[#176951] hover:bg-[#10543f] text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm">
-                📲 Instalar
-              </button>
-            `}
-            <a href="login.html" class="text-xs bg-white/10 px-2.5 py-1.5 rounded-lg text-slate-200 hover:text-white">Salir</a>
-          </div>
-        </div>
-      </header>
-
-      <!-- Desktop Subnav -->
-      <div class="hidden md:flex bg-white border-b border-slate-200 justify-center gap-4 py-2 text-xs font-bold">
-        <button onclick="window.switchTab('courses')" class="px-4 py-2 rounded-lg transition ${activeTab === 'courses' ? 'bg-[#176951] text-white' : 'text-slate-600 hover:bg-slate-100'}">📚 12 Niveles de Cursos</button>
-        <button onclick="window.switchTab('flashcards')" class="px-4 py-2 rounded-lg transition ${activeTab === 'flashcards' ? 'bg-[#176951] text-white' : 'text-slate-600 hover:bg-slate-100'}">⚡ Flashcards Rápidas</button>
-        <button onclick="window.switchTab('phonetics')" class="px-4 py-2 rounded-lg transition ${activeTab === 'phonetics' ? 'bg-[#176951] text-white' : 'text-slate-600 hover:bg-slate-100'}">🎧 Fonética & Audio</button>
-      </div>
-
-      <!-- Main Container -->
-      <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 pb-24 md:pb-12">
-    `;
-
-    if (activeTab === 'courses') {
-      if (activeTopicIdx !== null) {
-        html += renderTopicDetails(currentLevel, activeTopicIdx);
-      } else {
-        html += renderCourses(levels, currentLevel);
-      }
-    } else if (activeTab === 'flashcards') {
-      html += renderFlashcards();
-    } else if (activeTab === 'phonetics') {
-      html += renderPhonetics(levels);
-    }
-
-    html += `
-      </main>
-
-      <!-- Mobile Native Bottom Bar -->
-      <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2 shadow-lg flex justify-around items-center safe-bottom">
-        <button onclick="window.switchTab('courses')" class="flex flex-col items-center ${activeTab === 'courses' ? 'text-[#176951] font-bold' : 'text-slate-500'}">
-          <span class="text-xl">📚</span>
-          <span class="text-[11px]">Cursos</span>
-        </button>
-        <button onclick="window.switchTab('flashcards')" class="flex flex-col items-center ${activeTab === 'flashcards' ? 'text-[#176951] font-bold' : 'text-slate-500'}">
-          <span class="text-xl">⚡</span>
-          <span class="text-[11px]">Flashcards</span>
-        </button>
-        <button onclick="window.switchTab('phonetics')" class="flex flex-col items-center ${activeTab === 'phonetics' ? 'text-[#176951] font-bold' : 'text-slate-500'}">
-          <span class="text-xl">🎧</span>
-          <span class="text-[11px]">Fonética</span>
-        </button>
-      </nav>
-    `;
-
-    app.innerHTML = html;
-
-    const installBtn = document.getElementById('install-btn');
-    if (installBtn && deferredInstallPrompt) {
-      installBtn.onclick = () => {
-        deferredInstallPrompt.prompt();
-        deferredInstallPrompt = null;
-        render();
-      };
-    }
-  }
-
-  function renderCourses(levels, currentLevel) {
-    const levelNum = activeLevelIdx + 1;
-    let h = `
-      <div class="space-y-6">
-        <!-- Selector Horizontal de Niveles -->
-        <div class="bg-white p-3 rounded-2xl border border-slate-200 overflow-x-auto flex gap-2">
-    `;
-    levels.forEach((lvl, i) => {
-      const isSel = i === activeLevelIdx;
-      h += `
-        <button onclick="window.selectLevel(${i})" class="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition ${isSel ? 'bg-[#153958] text-white shadow-xs' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}">
-          Nivel ${i + 1}
-        </button>
-      `;
-    });
-    h += `
-        </div>
-
-        <!-- Banner del Nivel -->
-        <div class="bg-gradient-to-r from-[#153958] to-[#176951] text-white p-6 rounded-3xl shadow-md">
-          <span class="text-xs uppercase tracking-widest text-[#b9d9d0] font-bold">Nivel Oficial ${levelNum} de 12</span>
-          <h1 class="text-2xl sm:text-3xl font-extrabold mt-1">${currentLevel.title || 'Me and My Identity'}</h1>
-          <p class="text-xs text-slate-200 mt-2">6 temas interactivos con lectura, ejercicios de gramática y fonética americana.</p>
-        </div>
-
-        <!-- Sonidos Clave del Nivel -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-[#176951]">Sonidos Clave del Nivel ${levelNum}</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-    `;
-    (currentLevel.sounds || []).forEach((s) => {
-      h += `
-        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-          <div>
-            <strong class="text-sm font-bold text-slate-900">${s[0]}</strong>
-            <span class="text-xs text-indigo-700 font-mono ml-2">${s[1]}</span>
-            <p class="text-[11px] text-slate-500 mt-0.5">${s[3]}</p>
-          </div>
-          <button onclick="window.speakText('${s[0]}')" class="p-2 bg-[#153958] hover:bg-[#1e4a70] text-white rounded-lg transition" title="Escuchar pronunciación">🔊</button>
-        </div>
-      `;
-    });
-    h += `
-          </div>
-        </div>
-
-        <!-- Lista de Temas -->
-        <div class="space-y-3">
-          <h3 class="text-base font-bold text-[#153958]">Temas de Estudio (Nivel ${levelNum})</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    `;
-    (currentLevel.topics || []).forEach((top, tIdx) => {
-      const topId = `l${levelNum}-t${tIdx + 1}`;
-      const isDone = !!completedTopics[topId];
-      h += `
-        <div class="p-5 rounded-2xl bg-white border border-slate-200 hover:border-[#176951] shadow-xs space-y-3 flex flex-col justify-between transition group">
-          <div>
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-bold text-[#176951] uppercase">Tema ${tIdx + 1}</span>
-              ${isDone ? '<span class="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded">✓ Completado</span>' : '<span class="text-slate-400">Pendiente</span>'}
-            </div>
-            <h4 class="font-bold text-slate-900 text-base mt-1 group-hover:text-[#176951] transition">${top[0]}</h4>
-            <p class="text-xs text-slate-600 line-clamp-3 mt-1 leading-relaxed">${top[1]}</p>
-          </div>
-
-          <div class="pt-3 border-t border-slate-100 space-y-2">
-            <div class="p-2 bg-[#f7f6ef] rounded-lg border-l-2 border-[#bb944c] flex items-center justify-between">
-              <span class="text-[11px] text-slate-800 italic truncate">${top[2]}</span>
-              <button onclick="window.speakText('${top[2].replace(/'/g, '')}')" class="text-xs text-[#bb944c] hover:underline font-bold ml-1">🔊</button>
-            </div>
-
-            <div class="flex items-center justify-between pt-1">
-              <button onclick="window.toggleDone('${topId}')" class="text-xs font-semibold ${isDone ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-900'}">
-                ${isDone ? '✓ Listo' : 'Marcar visto'}
-              </button>
-              <button onclick="window.openTopicInPage(${tIdx})" class="px-3.5 py-1.5 bg-[#176951] hover:bg-[#10543f] text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1">
-                <span>Estudiar</span> →
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-    });
-    h += `
-          </div>
-        </div>
-      </div>
-    `;
-    return h;
-  }
-
-  // PANTALLA COMPLETA INTERACTIVA DEL TEMA (SIN POP-UPS)
-  function renderTopicDetails(level, tIdx) {
-    const top = level.topics[tIdx];
-    if (!top) return '';
-    const levelNum = activeLevelIdx + 1;
-    const topId = `l${levelNum}-t${tIdx + 1}`;
-    const isDone = !!completedTopics[topId];
-
+  /* ---------- Vistas ---------- */
+  function header() {
+    const tabs = [['courses', 'book', 'Cursos'], ['flashcards', 'bolt', 'Flashcards'], ['phonetics', 'ear', 'Fonética']];
+    const n = streak();
     return `
-      <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-        <!-- Navegación superior -->
-        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-          <button onclick="window.closeTopic()" class="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 transition">
-            ← Volver a los temas del Nivel ${levelNum}
-          </button>
-          <button onclick="window.toggleDone('${topId}')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${isDone ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
-            ${isDone ? '✓ Tema Completado' : 'Marcar como estudiado'}
-          </button>
-        </div>
-
-        <div>
-          <span class="text-xs font-bold text-[#176951] uppercase tracking-wider">Tema ${tIdx + 1} · Nivel ${levelNum}</span>
-          <h2 class="text-2xl font-extrabold text-[#153958] mt-1">${top[0]}</h2>
-        </div>
-
-        <!-- Pestañas internas de estudio -->
-        <div class="flex gap-2 border-b border-slate-200 pb-2 overflow-x-auto text-xs font-bold">
-          <button onclick="window.setSection('rule')" class="px-3 py-1.5 rounded-lg transition ${activeTopicSection === 'rule' ? 'bg-[#176951] text-white' : 'text-slate-600 hover:bg-slate-100'}">1. Regla & Ejemplo</button>
-          <button onclick="window.setSection('reading')" class="px-3 py-1.5 rounded-lg transition ${activeTopicSection === 'reading' ? 'bg-[#176951] text-white' : 'text-slate-600 hover:bg-slate-100'}">2. Lectura & Quiz</button>
-          <button onclick="window.setSection('grammar')" class="px-3 py-1.5 rounded-lg transition ${activeTopicSection === 'grammar' ? 'bg-[#176951] text-white' : 'text-slate-600 hover:bg-slate-100'}">3. Práctica de Gramática</button>
-          <button onclick="window.setSection('speaking')" class="px-3 py-1.5 rounded-lg transition ${activeTopicSection === 'speaking' ? 'bg-[#176951] text-white' : 'text-slate-600 hover:bg-slate-100'}">4. Misión Oral</button>
-        </div>
-
-        <!-- 1. Regla & Ejemplo -->
-        ${activeTopicSection === 'rule' ? `
-          <div class="space-y-4">
-            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-              <span class="text-xs font-bold text-slate-500 uppercase">Explicación Gramatical:</span>
-              <p class="text-slate-800 text-sm mt-1 leading-relaxed">${top[1]}</p>
-            </div>
-
-            <div class="p-4 bg-[#f7f6ef] rounded-2xl border-l-4 border-[#bb944c] space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-[#8c6b2b] uppercase">Ejemplo en Conversación:</span>
-                <button onclick="window.speakText('${top[2].replace(/'/g, '')}')" class="px-3 py-1 bg-amber-100 text-[#8c6b2b] font-bold text-xs rounded-lg hover:bg-amber-200 flex items-center gap-1">🔊 Escuchar Audio</button>
-              </div>
-              <p class="text-slate-900 font-semibold text-base">${top[2]}</p>
-            </div>
-
-            <div class="flex justify-end pt-2">
-              <button onclick="window.setSection('reading')" class="px-4 py-2 bg-[#176951] hover:bg-[#10543f] text-white rounded-xl text-xs font-bold">Continuar a Lectura →</button>
-            </div>
+    <header class="sticky top-0 z-40 text-white" style="background:var(--navy);border-bottom:3px solid var(--gold)">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <img src="LOGO%20EEA.jpg" alt="" class="w-10 h-10 rounded-lg bg-white/10 p-0.5 object-contain" onerror="this.style.display='none'">
+          <div class="min-w-0">
+            <div class="serif text-lg font-bold leading-tight truncate">Expressive English Academy</div>
+            <div class="text-xs opacity-70 hidden sm:block">Embrace the Extraordinary</div>
           </div>
-        ` : ''}
-
-        <!-- 2. Lectura & Quiz -->
-        ${activeTopicSection === 'reading' ? `
-          <div class="space-y-4">
-            <div class="p-5 bg-[#f4f7f5] rounded-2xl border border-slate-200 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-[#176951] uppercase">Reading Passage:</span>
-                <button onclick="window.speakText('${top[3].replace(/'/g, '')}', 0.85)" class="px-3 py-1 bg-[#176951] text-white font-bold text-xs rounded-lg hover:bg-[#10543f] flex items-center gap-1">🔊 Escuchar Narración</button>
-              </div>
-              <p class="text-slate-900 text-base leading-relaxed font-serif">${top[3]}</p>
-            </div>
-
-            <div class="p-4 rounded-2xl border border-slate-200 space-y-3">
-              <strong class="block text-slate-900 text-sm">Pregunta de Comprensión:</strong>
-              <p class="text-slate-700 text-xs font-medium">${top[4]}</p>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button onclick="window.selectReadingAns('${top[5]}')" class="p-3 rounded-xl border text-left text-xs font-bold transition ${currentReadingChecked ? (currentReadingAnswer === top[5] ? 'bg-emerald-100 border-emerald-400 text-emerald-900' : 'bg-slate-50 border-slate-200') : (currentReadingAnswer === top[5] ? 'border-[#176951] bg-[#176951]/10 text-[#176951]' : 'border-slate-200 hover:bg-slate-50')}">
-                  ${top[5]} ${currentReadingChecked && top[5] === top[5] ? '✓ Correcto' : ''}
-                </button>
-                <button onclick="window.selectReadingAns('${top[6]}')" class="p-3 rounded-xl border text-left text-xs font-bold transition ${currentReadingChecked ? (currentReadingAnswer === top[6] ? 'bg-rose-100 border-rose-300 text-rose-900' : 'bg-slate-50 border-slate-200') : (currentReadingAnswer === top[6] ? 'border-[#176951] bg-[#176951]/10 text-[#176951]' : 'border-slate-200 hover:bg-slate-50')}">
-                  ${top[6]}
-                </button>
-              </div>
-
-              ${!currentReadingChecked ? `
-                <button onclick="window.checkReadingAns()" class="px-4 py-2 bg-[#153958] text-white rounded-xl text-xs font-bold hover:bg-[#1e4a70]">Comprobar Respuesta</button>
-              ` : `
-                <div class="p-2.5 rounded-xl text-xs font-semibold ${currentReadingAnswer === top[5] ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}">
-                  ${currentReadingAnswer === top[5] ? '¡Excelente! Respuesta correcta.' : 'La respuesta correcta es: ' + top[5]}
-                </div>
-              `}
-            </div>
-
-            <div class="flex justify-between pt-2">
-              <button onclick="window.setSection('rule')" class="text-xs text-slate-500 font-bold hover:underline">← Anterior</button>
-              <button onclick="window.setSection('grammar')" class="px-4 py-2 bg-[#176951] hover:bg-[#10543f] text-white rounded-xl text-xs font-bold">Continuar a Gramática →</button>
-            </div>
-          </div>
-        ` : ''}
-
-        <!-- 3. Práctica de Gramática -->
-        ${activeTopicSection === 'grammar' ? `
-          <div class="space-y-4">
-            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <span class="text-xs font-bold text-[#176951] uppercase">Completa la Oración:</span>
-              <p class="text-lg font-mono font-bold text-slate-800">${top[7]}</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <button onclick="window.selectGrammarAns('${top[8]}')" class="p-4 rounded-xl border font-bold text-center text-sm transition ${currentGrammarChecked ? (currentGrammarAnswer === top[8] ? 'bg-emerald-100 border-emerald-400 text-emerald-900' : 'bg-slate-50 border-slate-200') : (currentGrammarAnswer === top[8] ? 'border-[#176951] bg-[#176951]/10 text-[#176951]' : 'border-slate-200 hover:bg-slate-50')}">
-                ${top[8]} ${currentGrammarChecked && top[8] === top[8] ? '✓' : ''}
-              </button>
-              <button onclick="window.selectGrammarAns('${top[9]}')" class="p-4 rounded-xl border font-bold text-center text-sm transition ${currentGrammarChecked ? (currentGrammarAnswer === top[9] ? 'bg-rose-100 border-rose-300 text-rose-900' : 'bg-slate-50 border-slate-200') : (currentGrammarAnswer === top[9] ? 'border-[#176951] bg-[#176951]/10 text-[#176951]' : 'border-slate-200 hover:bg-slate-50')}">
-                ${top[9]}
-              </button>
-            </div>
-
-            ${!currentGrammarChecked ? `
-              <button onclick="window.checkGrammarAns()" class="px-4 py-2 bg-[#153958] text-white rounded-xl text-xs font-bold hover:bg-[#1e4a70]">Verificar Gramática</button>
-            ` : `
-              <div class="p-2.5 rounded-xl text-xs font-semibold ${currentGrammarAnswer === top[8] ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}">
-                ${currentGrammarAnswer === top[8] ? '¡Exacto! Estructura correcta.' : 'La opción correcta es: ' + top[8]}
-              </div>
-            `}
-
-            <div class="flex justify-between pt-2">
-              <button onclick="window.setSection('reading')" class="text-xs text-slate-500 font-bold hover:underline">← Anterior</button>
-              <button onclick="window.setSection('speaking')" class="px-4 py-2 bg-[#176951] hover:bg-[#10543f] text-white rounded-xl text-xs font-bold">Continuar a Misión Oral →</button>
-            </div>
-          </div>
-        ` : ''}
-
-        <!-- 4. Misión Oral -->
-        ${activeTopicSection === 'speaking' ? `
-          <div class="space-y-4">
-            <div class="p-5 bg-[#edf4f0] rounded-2xl border border-[#d2e4d9] space-y-2">
-              <span class="text-xs font-bold text-[#176951] uppercase">Consigna de Habla (Speaking Mission):</span>
-              <p class="text-slate-900 font-bold text-base">${top[10]}</p>
-              <p class="text-xs text-slate-600">Hablá en voz alta para practicar tu entonación antes de tu próxima clase en EEA.</p>
-            </div>
-
-            <div class="p-6 border border-slate-200 rounded-2xl text-center space-y-3 bg-white">
-              <button onclick="window.toggleRecord()" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto transition shadow-md ${isRecording ? 'bg-rose-600 text-white animate-pulse' : 'bg-[#153958] text-white hover:bg-[#1e4a70]'}">
-                <span class="text-2xl">${isRecording ? '⏹' : '🎤'}</span>
-              </button>
-              <p class="text-xs font-mono font-bold text-slate-700">
-                ${isRecording ? 'Grabando práctica: 00:' + (recordSeconds < 10 ? '0' + recordSeconds : recordSeconds) : (hasRecorded ? '✓ Grabación finalizada con éxito' : 'Tocá el micrófono para practicar tu voz')}
-              </p>
-            </div>
-
-            <div class="flex justify-between items-center pt-4 border-t border-slate-100">
-              <button onclick="window.closeTopic()" class="text-xs font-bold text-slate-600 hover:text-slate-900">Volver a temas</button>
-              <button onclick="window.completeAndExit('${topId}')" class="px-5 py-2.5 bg-[#176951] hover:bg-[#10543f] text-white text-xs font-bold rounded-xl shadow-sm transition">
-                ✓ Completar y Guardar Avance
-              </button>
-            </div>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }
-
-  function renderFlashcards() {
-    const card = sampleCards[currentCardIdx] || sampleCards[0];
-    return `
-      <div class="max-w-xl mx-auto space-y-6 text-center">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200">
-          <span class="text-xs font-bold text-[#176951] uppercase">Repaso Diario EEA</span>
-          <h2 class="text-xl font-bold text-[#153958]">Flashcards de Expresiones Clave</h2>
-          <p class="text-xs text-slate-500 mt-1">Tarjeta ${currentCardIdx + 1} de ${sampleCards.length} · Tocá para ver la traducción</p>
         </div>
-
-        <div onclick="window.flipCard()" class="bg-white rounded-3xl border-2 border-slate-200 hover:border-[#176951] p-8 shadow-md cursor-pointer select-none min-h-[220px] flex flex-col justify-center items-center space-y-3 transition">
-          ${!isCardFlipped ? `
-            <span class="text-xs text-slate-400 uppercase font-semibold">Frase en Inglés (Tocar para voltear)</span>
-            <h3 class="text-2xl sm:text-3xl font-black text-[#153958]">"${card.en}"</h3>
-            <p class="text-xs text-indigo-700 font-mono font-semibold">${card.ipa}</p>
-            <button onclick="event.stopPropagation(); window.speakText('${card.en}')" class="px-4 py-1.5 bg-[#edf4f0] text-[#176951] rounded-full text-xs font-bold hover:bg-[#d5e8dc] transition">🔊 Escuchar audio</button>
-          ` : `
-            <span class="text-xs text-slate-400 uppercase font-semibold">Significado & Uso</span>
-            <h3 class="text-xl sm:text-2xl font-bold text-slate-800">${card.es}</h3>
-            <p class="text-xs text-slate-500">Inglés: <strong>${card.en}</strong></p>
-          `}
-        </div>
-
-        <div class="flex items-center justify-between">
-          <button onclick="window.prevCard()" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50">← Anterior</button>
-          <span class="text-xs text-slate-400 font-semibold">🔄 Toca la tarjeta</span>
-          <button onclick="window.nextCard()" class="px-4 py-2 bg-[#176951] hover:bg-[#10543f] text-white rounded-xl text-xs font-bold">Siguiente →</button>
+        <nav class="hidden md:flex gap-1" aria-label="Secciones">
+          ${tabs.map(t => `<button class="tab ${tab === t[0] ? 'on' : ''}" data-a="tab" data-v="${t[0]}" ${tab === t[0] ? 'aria-current="page"' : ''}>${ic(t[1], 16)}${t[2]}</button>`).join('')}
+        </nav>
+        <div class="flex items-center gap-2">
+          <span class="chip" title="Días seguidos estudiando">${ic('flame', 15)}${n} ${n === 1 ? 'día' : 'días'}</span>
+          <button class="chip" data-a="install">${ic('dl', 15)}<span class="hidden sm:inline">Instalar app</span></button>
+          <a class="chip" href="login.html">Salir</a>
         </div>
       </div>
-    `;
+    </header>
+    ${showHelp ? `<div class="max-w-6xl mx-auto px-4 mt-4"><div class="card p-4 text-sm flex justify-between gap-4"><p><strong>Instalá la app en tu celular.</strong> En Chrome: menú ⋮, luego "Instalar aplicación". En iPhone (Safari): Compartir, luego "Agregar a pantalla de inicio".</p><button class="btn b-soft" data-a="install">Cerrar</button></div></div>` : ''}`;
   }
 
-  function renderPhonetics(levels) {
-    return `
-      <div class="max-w-3xl mx-auto space-y-6">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200">
-          <span class="text-xs font-bold text-[#176951] uppercase">Laboratorio Fonético EEA</span>
-          <h2 class="text-xl font-bold text-[#153958]">Pronunciación Americana con Audio</h2>
-          <p class="text-xs text-slate-500 mt-1">Hacé clic en cualquier palabra para escuchar su pronunciación nativa clara.</p>
-        </div>
+  function bottomNav() {
+    const tabs = [['courses', 'book', 'Cursos'], ['flashcards', 'bolt', 'Flashcards'], ['phonetics', 'ear', 'Fonética']];
+    return `<nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t flex justify-around pt-2 safe-bottom" style="border-color:var(--line)" aria-label="Secciones">
+      ${tabs.map(t => `<button data-a="tab" data-v="${t[0]}" class="flex flex-col items-center gap-0.5 px-4 py-1 text-xs font-semibold" style="color:${tab === t[0] ? 'var(--green)' : '#64748b'}">${ic(t[1], 22)}${t[2]}</button>`).join('')}
+    </nav>`;
+  }
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          ${['name', 'teacher', 'student', 'morning', 'afternoon', 'welcome', 'practice', 'extraordinary', 'friend', 'English', 'family', 'community'].map(w => `
-            <div onclick="window.speakText('${w}')" class="p-4 bg-white rounded-2xl border border-slate-200 hover:border-[#176951] cursor-pointer shadow-xs flex items-center justify-between group transition">
+  function courses() {
+    const lv = levels(), L = lv[lvl] || { title: 'Nivel', topics: [], sounds: [] };
+    const tp = L.topics || [], dn = levelDone(lvl), tot = totals();
+    const pct = tp.length ? Math.round(dn / tp.length * 100) : 0;
+    const gp = tot.t ? Math.round(tot.d / tot.t * 100) : 0;
+    return `<div class="space-y-6">
+      <section class="hero p-6 sm:p-8">
+        <p class="text-sm font-semibold" style="color:#e3c88f">Nivel ${lvl + 1} de ${lv.length}</p>
+        <h1 class="serif text-3xl sm:text-4xl font-bold mt-1 max-w-2xl">${esc(L.title)}</h1>
+        <p class="mt-2 text-sm opacity-85 max-w-xl">${tp.length} temas con lectura, gramática, pronunciación y práctica oral.</p>
+        <div class="mt-5 flex items-center gap-3 max-w-md"><div class="bar flex-1"><i style="width:${pct}%"></i></div><span class="text-sm font-semibold">${dn} de ${tp.length} completados</span></div>
+      </section>
+
+      <div class="grid grid-cols-2 gap-3 max-w-xl">
+        <div class="card p-4"><div class="text-xs text-slate-500 font-semibold">Avance total</div><div class="serif text-2xl font-bold" style="color:var(--navy)">${gp}%</div><div class="bar mt-2"><i style="width:${gp}%"></i></div></div>
+        <div class="card p-4"><div class="text-xs text-slate-500 font-semibold">Temas completados</div><div class="serif text-2xl font-bold" style="color:var(--navy)">${tot.d} <span class="text-sm font-sans text-slate-400">de ${tot.t}</span></div></div>
+      </div>
+
+      <div class="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Niveles">
+        ${lv.map((l, i) => `<button class="pill ${i === lvl ? 'on' : ''}" data-a="lvl" data-v="${i}">Nivel ${i + 1}${(l.topics || []).length && levelDone(i) === l.topics.length ? ic('check', 13) : ''}</button>`).join('')}
+      </div>
+
+      ${(L.sounds || []).length ? `<section>
+        <h2 class="serif text-xl font-bold mb-3" style="color:var(--navy)">Sonidos clave de este nivel</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          ${L.sounds.map(s => `<div class="card p-3 flex items-center justify-between gap-3">
+            <div><strong>${esc(s[0])}</strong> <span class="text-sm font-mono ml-1" style="color:#4f46e5">${esc(s[1])}</span><p class="text-sm text-slate-500">${esc(s[3])}</p></div>
+            <button class="btn b-navy" style="padding:.5rem .7rem" data-a="say" data-v="${esc(s[0])}" aria-label="Escuchar ${esc(s[0])}">${ic('vol', 16)}</button>
+          </div>`).join('')}
+        </div></section>` : ''}
+
+      <section>
+        <h2 class="serif text-xl font-bold mb-3" style="color:var(--navy)">Temas de estudio</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${tp.map((t, i) => {
+            const d = !!done[tid(lvl, i)];
+            return `<article class="card p-5 flex flex-col justify-between gap-4" style="${d ? 'border-color:#86c3ad' : ''}">
               <div>
-                <strong class="text-slate-900 text-sm block group-hover:text-[#176951] transition">${w}</strong>
-                <span class="text-[10px] text-slate-400">Tocar para oír</span>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="font-semibold" style="color:var(--green)">Tema ${i + 1}</span>
+                  ${d ? `<span class="inline-flex items-center gap-1 text-emerald-700 font-semibold">${ic('check', 14)}Completado</span>` : '<span class="text-slate-400">Pendiente</span>'}
+                </div>
+                <h3 class="serif text-lg font-bold mt-1" style="color:var(--navy)">${esc(t[0])}</h3>
+                <p class="text-sm text-slate-600 mt-1 line-clamp-3">${esc(t[1])}</p>
               </div>
-              <span class="text-base text-slate-400 group-hover:text-[#176951]">🔊</span>
-            </div>
-          `).join('')}
+              <div class="space-y-3">
+                <div class="quote p-2 pl-3 flex items-center justify-between gap-2">
+                  <span class="text-sm italic truncate">${esc(t[2])}</span>
+                  <button class="shrink-0" style="color:#8c6b2b" data-a="say" data-v="${esc(t[2])}" aria-label="Escuchar ejemplo">${ic('vol', 18)}</button>
+                </div>
+                <button class="btn b-green w-full" data-a="open" data-v="${i}">${d ? 'Repasar tema' : 'Empezar tema'}</button>
+              </div>
+            </article>`;
+          }).join('')}
         </div>
-      </div>
-    `;
+      </section>
+    </div>`;
   }
 
-  // ACCIONES GLOBALES DE NAVEGACIÓN
-  window.switchTab = (tab) => { activeTab = tab; activeTopicIdx = null; render(); };
-  window.selectLevel = (idx) => { activeLevelIdx = idx; activeTopicIdx = null; render(); };
-  window.speakText = (text) => { speak(text); };
+  function opts(list, ans, chk, correct, act) {
+    return list.map(o => {
+      let c = 'opt';
+      if (chk) { if (o === correct) c += ' ok'; else if (o === ans) c += ' bad'; }
+      else if (o === ans) c += ' sel';
+      return `<button class="${c}" data-a="${act}" data-v="${esc(o)}" ${chk ? 'disabled' : ''}>${esc(o)}</button>`;
+    }).join('');
+  }
+  const verdict = (ok, good, bad) => `<div class="p-3 rounded-lg text-sm font-semibold ${ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-900 border border-amber-200'}" role="status">${ok ? good : bad}</div>`;
 
-  // Abrir tema adentro de la página (Navegación fluida)
-  window.openTopicInPage = (tIdx) => {
-    activeTopicIdx = tIdx;
-    activeTopicSection = 'rule';
-    currentReadingAnswer = null;
-    currentReadingChecked = false;
-    currentGrammarAnswer = null;
-    currentGrammarChecked = false;
-    hasRecorded = false;
-    isRecording = false;
-    render();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  window.closeTopic = () => {
-    activeTopicIdx = null;
-    render();
-  };
-
-  window.setSection = (sec) => {
-    activeTopicSection = sec;
-    render();
-  };
-
-  window.selectReadingAns = (ans) => {
-    currentReadingAnswer = ans;
-    render();
-  };
-  window.checkReadingAns = () => {
-    currentReadingChecked = true;
-    render();
-  };
-
-  window.selectGrammarAns = (ans) => {
-    currentGrammarAnswer = ans;
-    render();
-  };
-  window.checkGrammarAns = () => {
-    currentGrammarChecked = true;
-    render();
-  };
-
-  window.toggleRecord = () => {
-    if (!isRecording) {
-      isRecording = true;
-      recordSeconds = 0;
-      recordTimer = setInterval(() => {
-        recordSeconds++;
-        if (recordSeconds >= 10) {
-          clearInterval(recordTimer);
-          isRecording = false;
-          hasRecorded = true;
-          render();
-        } else {
-          render();
-        }
-      }, 1000);
+  function topicView() {
+    const L = levels()[lvl], t = L.topics[tIdx], id = tid(lvl, tIdx), d = !!done[id], si = keys.indexOf(sec);
+    let body = '';
+    if (sec === 'rule') {
+      body = `<div class="space-y-4 max-w-3xl">
+        <div class="card p-5"><h3 class="font-semibold mb-1">Explicación</h3><p class="leading-relaxed">${esc(t[1])}</p></div>
+        <div class="quote p-5 space-y-2">
+          <div class="flex items-center justify-between gap-3"><h3 class="font-semibold">Ejemplo en una conversación</h3>
+          <button class="btn b-soft" data-a="say" data-v="${esc(t[2])}">${ic('vol', 16)}Escuchar</button></div>
+          <p class="serif text-xl font-medium">${esc(t[2])}</p>
+        </div></div>`;
+    } else if (sec === 'reading') {
+      body = `<div class="space-y-4 max-w-3xl">
+        <div class="card p-5 space-y-3"><div class="flex items-center justify-between gap-3"><h3 class="font-semibold">Lectura</h3>
+          <button class="btn b-soft" data-a="slow" data-v="${esc(t[3])}">${ic('vol', 16)}Escuchar lectura</button></div>
+          <p class="serif text-lg leading-8">${esc(t[3])}</p></div>
+        <div class="card p-5 space-y-3"><h3 class="font-semibold">Pregunta de comprensión</h3><p>${esc(t[4])}</p>
+          <div class="grid sm:grid-cols-2 gap-2">${opts(rOpts, rAns, rChk, t[5], 'rA')}</div>
+          ${rChk ? verdict(rAns === t[5], '¡Muy bien! Respuesta correcta.', 'La respuesta correcta es: ' + esc(t[5])) : `<button class="btn b-navy" data-a="rC" ${rAns ? '' : 'disabled'}>Comprobar respuesta</button>`}
+        </div></div>`;
+    } else if (sec === 'grammar') {
+      body = `<div class="space-y-4 max-w-3xl">
+        <div class="card p-5"><h3 class="font-semibold mb-2">Completá la oración</h3><p class="text-xl font-mono font-bold">${esc(t[7])}</p></div>
+        <div class="grid grid-cols-2 gap-3">${opts(gOpts, gAns, gChk, t[8], 'gA')}</div>
+        ${gChk ? verdict(gAns === t[8], '¡Exacto! La estructura es correcta.', 'La opción correcta es: ' + esc(t[8])) : `<button class="btn b-navy" data-a="gC" ${gAns ? '' : 'disabled'}>Verificar</button>`}
+      </div>`;
     } else {
-      clearInterval(recordTimer);
-      isRecording = false;
-      hasRecorded = true;
+      body = `<div class="space-y-4 max-w-3xl">
+        <div class="quote p-5"><h3 class="font-semibold mb-1">Tu misión oral</h3><p class="serif text-xl font-medium">${esc(t[10])}</p>
+          <p class="text-sm text-slate-600 mt-2">Grabate hablando y escuchá tu práctica antes de la próxima clase. La grabación queda solo en tu dispositivo.</p></div>
+        <div class="card p-6 text-center space-y-3">
+          <button class="btn ${recording ? 'rec' : 'b-navy'}" style="${recording ? 'background:#e11d48;color:#fff;' : ''}width:72px;height:72px;border-radius:50%;padding:0" data-a="rec" aria-label="${recording ? 'Detener grabación' : 'Empezar a grabar'}">${ic(recording ? 'stop' : 'mic', 28)}</button>
+          <p class="text-sm font-semibold" role="status">${recording ? 'Grabando <span id="rec-t" class="font-mono">' + mmss(secs) + '</span>' : (audioURL ? 'Escuchá tu grabación' : 'Tocá el micrófono para empezar')}</p>
+          ${recErr ? `<p class="text-sm text-rose-700">${esc(recErr)}</p>` : ''}
+          ${audioURL && !recording ? `<audio controls src="${audioURL}" class="mx-auto w-full max-w-sm"></audio>` : ''}
+        </div></div>`;
     }
-    render();
-  };
+    const prev = si > 0 ? `<button class="btn b-soft" data-a="sec" data-v="${keys[si - 1]}">${ic('left', 16)}Anterior</button>` : '<span></span>';
+    const next = si < 3 ? `<button class="btn b-green" data-a="sec" data-v="${keys[si + 1]}">Continuar a ${stepNames[si + 1].toLowerCase()}</button>`
+      : `<button class="btn b-green" data-a="finish" data-v="${id}">${ic('check', 16)}Completar y guardar avance</button>`;
+    return `<div class="space-y-6">
+      <div class="flex items-center justify-between gap-3">
+        <button class="btn b-soft" data-a="close">${ic('left', 16)}Temas del nivel ${lvl + 1}</button>
+        <button class="btn ${d ? 'b-soft' : 'b-soft'}" data-a="done" data-v="${id}">${d ? ic('check', 16) + 'Completado' : 'Marcar como estudiado'}</button>
+      </div>
+      <div><p class="text-sm font-semibold" style="color:var(--green)">Tema ${tIdx + 1} del nivel ${lvl + 1}</p>
+        <h1 class="serif text-3xl font-bold" style="color:var(--navy)">${esc(t[0])}</h1></div>
+      <ol class="grid grid-cols-4 gap-2" aria-label="Pasos del tema">${keys.map((k, i) => `<li><button class="step ${k === sec ? 'on' : ''} ${i < si ? 'past' : ''}" data-a="sec" data-v="${k}"><b>${i < si ? ic('check', 12) : i + 1}</b><span class="leading-tight">${stepNames[i]}</span></button></li>`).join('')}</ol>
+      ${body}
+      <div class="flex justify-between items-center gap-3 pt-2">${prev}${next}</div>
+    </div>`;
+  }
 
-  window.completeAndExit = (id) => {
-    completedTopics[id] = true;
-    saveProgress();
-    activeTopicIdx = null;
-    render();
-  };
+  function flashcards() {
+    const c = cards[ci];
+    return `<div class="max-w-xl mx-auto space-y-5">
+      <div class="text-center"><p class="text-sm font-semibold" style="color:var(--green)">Repaso diario</p>
+        <h1 class="serif text-3xl font-bold" style="color:var(--navy)">Expresiones clave</h1>
+        <p class="text-sm text-slate-500 mt-1">Tarjeta ${ci + 1} de ${cards.length}. Tocá la tarjeta para ver el significado.</p></div>
+      <div class="flip ${flipped ? 'on' : ''}" data-a="flip" tabindex="0" role="button" aria-label="Voltear tarjeta">
+        <div>
+          <div class="face"><div class="serif text-3xl font-bold" style="color:var(--navy)">${esc(c.en)}</div>
+            <div class="font-mono text-sm" style="color:#4f46e5">${esc(c.ipa)}</div>
+            <button class="btn b-soft" data-a="say" data-v="${esc(c.en)}">${ic('vol', 16)}Escuchar</button></div>
+          <div class="face back"><div class="text-sm text-slate-500">Significado</div><div class="serif text-2xl font-bold">${esc(c.es)}</div></div>
+        </div>
+      </div>
+      <div class="text-center">${cards.map((_, i) => `<i class="dot ${i === ci ? 'on' : ''}"></i>`).join('')}</div>
+      <div class="flex justify-between"><button class="btn b-soft" data-a="prev">${ic('left', 16)}Anterior</button><button class="btn b-green" data-a="next">Siguiente</button></div>
+    </div>`;
+  }
 
-  window.toggleDone = (id) => {
-    completedTopics[id] = !completedTopics[id];
-    saveProgress();
-    render();
-  };
+  function phonetics() {
+    return `<div class="max-w-3xl mx-auto space-y-5">
+      <div><p class="text-sm font-semibold" style="color:var(--green)">Laboratorio de fonética</p>
+        <h1 class="serif text-3xl font-bold" style="color:var(--navy)">Pronunciación americana</h1>
+        <p class="text-sm text-slate-500 mt-1">Tocá una palabra para escucharla y repetila en voz alta.</p></div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        ${words.map(w => `<button class="card p-4 flex items-center justify-between text-left hover:border-emerald-700 transition-colors" data-a="say" data-v="${w}"><strong>${w}</strong><span class="text-slate-400">${ic('vol', 18)}</span></button>`).join('')}
+      </div></div>`;
+  }
 
-  window.flipCard = () => {
-    isCardFlipped = !isCardFlipped;
-    render();
-  };
-  window.nextCard = () => {
-    isCardFlipped = false;
-    currentCardIdx = (currentCardIdx + 1) % sampleCards.length;
-    render();
-  };
-  window.prevCard = () => {
-    isCardFlipped = false;
-    currentCardIdx = (currentCardIdx - 1 + sampleCards.length) % sampleCards.length;
-    render();
-  };
+  /* ---------- Render ---------- */
+  function render(keep) {
+    const y = window.scrollY;
+    let main = tab === 'courses' ? (tIdx !== null ? topicView() : courses()) : tab === 'flashcards' ? flashcards() : phonetics();
+    app.innerHTML = header() + `<main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 pb-28 md:pb-12">${main}</main>` + bottomNav();
+    window.scrollTo(0, keep ? y : 0);
+  }
 
-  render();
+  /* ---------- Grabación real de voz ---------- */
+  function stopRec() { if (mr && mr.state === 'recording') mr.stop(); }
+  async function toggleRec() {
+    if (recording) { stopRec(); return; }
+    if (!navigator.mediaDevices || !window.MediaRecorder) { recErr = 'Tu navegador no permite grabar audio.'; render(true); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunks = []; mr = new MediaRecorder(stream);
+      mr.ondataavailable = e => chunks.push(e.data);
+      mr.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        clearInterval(timer); recording = false;
+        if (audioURL) URL.revokeObjectURL(audioURL);
+        audioURL = tIdx !== null ? URL.createObjectURL(new Blob(chunks, { type: mr.mimeType })) : null;
+        render(true);
+      };
+      mr.start(); recording = true; secs = 0; recErr = '';
+      timer = setInterval(() => {
+        secs++;
+        const el = document.getElementById('rec-t'); if (el) el.textContent = mmss(secs);
+        if (secs >= 90) stopRec();
+      }, 1000);
+    } catch (err) { recErr = 'Permití el acceso al micrófono para poder grabarte.'; }
+    render(true);
+  }
+
+  /* ---------- Acciones ---------- */
+  const go = () => render(false);
+  const H = {
+    tab: v => { stopRec(); tab = v; tIdx = null; go(); },
+    lvl: v => { lvl = +v; tIdx = null; render(true); },
+    open: v => {
+      stopRec(); tIdx = +v; sec = 'rule'; mark();
+      const t = levels()[lvl].topics[tIdx];
+      rOpts = shuffle([t[5], t[6]]); gOpts = shuffle([t[8], t[9]]);
+      rAns = gAns = null; rChk = gChk = false; audioURL = null; recErr = '';
+      go();
+    },
+    close: () => { stopRec(); tIdx = null; go(); },
+    sec: v => { sec = v; go(); },
+    rA: v => { rAns = v; render(true); }, rC: () => { rChk = true; render(true); },
+    gA: v => { gAns = v; render(true); }, gC: () => { gChk = true; render(true); },
+    rec: toggleRec,
+    slow: v => speak(v, 0.85),
+    say: v => speak(v),
+    done: v => { done[v] = !done[v]; if (done[v]) mark(); save(); render(true); },
+    finish: v => { done[v] = true; mark(); save(); stopRec(); tIdx = null; go(); },
+    flip: (v, el) => { flipped = !flipped; el.classList.toggle('on', flipped); },
+    next: () => { flipped = false; ci = (ci + 1) % cards.length; render(true); },
+    prev: () => { flipped = false; ci = (ci - 1 + cards.length) % cards.length; render(true); },
+    install: () => {
+      if (deferred) { deferred.prompt(); deferred = null; showHelp = false; }
+      else showHelp = !showHelp;
+      render(true);
+    }
+  };
+  app.addEventListener('click', e => {
+    const el = e.target.closest('[data-a]');
+    if (el && H[el.dataset.a]) H[el.dataset.a](el.dataset.v, el);
+  });
+  app.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('flip')) { e.preventDefault(); H.flip(null, e.target); }
+  });
+
+  render(false);
 })();
